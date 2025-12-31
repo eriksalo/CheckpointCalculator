@@ -670,25 +670,35 @@ function calculateVDURACost(vdura, pricing) {
 function updateMigrationArrows(numJBODs, vduraBandwidth, competitorBandwidth) {
     const JBOD_BANDWIDTH = 21.5; // GB/s per JBOD
 
-    // VDURA: Create one arrow per JBOD
+    // VDURA: Create one arrow per JBOD (or show message if 100% SSD)
     const vduraContainer = document.getElementById('vdura-migration-container');
     let vduraHTML = '';
-    for (let i = 0; i < numJBODs; i++) {
-        vduraHTML += `
-            <div class="migration-arrow-vertical">
-                <svg class="arrow-svg-vertical" viewBox="0 0 40 80">
-                    <defs>
-                        <marker id="arrowhead-vdura-${i}" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
-                            <polygon points="0 0, 8 4, 0 8" fill="#e79f23" />
-                        </marker>
-                    </defs>
-                    <path d="M 20 10 L 20 66" stroke="#e79f23" stroke-width="3" fill="none" marker-end="url(#arrowhead-vdura-${i})" />
-                </svg>
-                <div class="arrow-label-vertical">JBOD ${i + 1}<br>${JBOD_BANDWIDTH} GB/s</div>
-            </div>
-        `;
+    if (numJBODs === 0) {
+        vduraHTML = '<div class="no-migration-message">100% SSD - No HDD Tier</div>';
+    } else {
+        for (let i = 0; i < numJBODs; i++) {
+            vduraHTML += `
+                <div class="migration-arrow-vertical">
+                    <svg class="arrow-svg-vertical" viewBox="0 0 40 80">
+                        <defs>
+                            <marker id="arrowhead-vdura-${i}" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+                                <polygon points="0 0, 8 4, 0 8" fill="#e79f23" />
+                            </marker>
+                        </defs>
+                        <path d="M 20 10 L 20 66" stroke="#e79f23" stroke-width="3" fill="none" marker-end="url(#arrowhead-vdura-${i})" />
+                    </svg>
+                    <div class="arrow-label-vertical">JBOD ${i + 1}<br>${JBOD_BANDWIDTH} GB/s</div>
+                </div>
+            `;
+        }
     }
     vduraContainer.innerHTML = vduraHTML;
+
+    // Hide/show VDURA migration note based on whether HDD tier exists
+    const vduraNoteEl = document.querySelector('.vdura-note-text');
+    if (vduraNoteEl) {
+        vduraNoteEl.style.display = numJBODs === 0 ? 'none' : 'block';
+    }
 
     // Competitor: Single S3 arrow
     const competitorContainer = document.getElementById('competitor-migration-container');
@@ -805,13 +815,17 @@ function addCheckpoint(system) {
     // Check if we should start a migration
     // Only one checkpoint can migrate at a time (single migration pipeline)
     const targetSSDCheckpoints = workflowParams.numCheckpoints;
+    const hddCapacity = system === 'vdura' ? config.hddCapacity : config.s3Capacity;
 
-    // If no migration in progress and we exceed target, start migrating oldest
-    if (migratingCheckpoints.length === 0 && activeCheckpoints.length + 1 > targetSSDCheckpoints) {
-        const oldestActive = activeCheckpoints.sort((a, b) => a.id - b.id)[0];
-        if (oldestActive) {
-            oldestActive.status = 'migrating';
-            oldestActive.migrationProgress = 0;
+    // Only migrate if there's HDD/S3 capacity available
+    if (hddCapacity > 0) {
+        // If no migration in progress and we exceed target, start migrating oldest
+        if (migratingCheckpoints.length === 0 && activeCheckpoints.length + 1 > targetSSDCheckpoints) {
+            const oldestActive = activeCheckpoints.sort((a, b) => a.id - b.id)[0];
+            if (oldestActive) {
+                oldestActive.status = 'migrating';
+                oldestActive.migrationProgress = 0;
+            }
         }
     }
 
@@ -863,7 +877,8 @@ function updateCheckpointStates(system, deltaMinutes) {
     const maxArchivedCheckpoints = Math.floor(hddCapacity / workflowParams.checkpointSize);
 
     // Check if HDD/S3 tier is full - restart simulation when it fills
-    if (archivedCheckpoints.length >= maxArchivedCheckpoints) {
+    // Skip if no HDD capacity (100% SSD)
+    if (hddCapacity > 0 && archivedCheckpoints.length >= maxArchivedCheckpoints) {
         // Only restart once both systems have filled (to keep them synchronized)
         const vduraArchived = animationState.vdura.checkpoints.filter(cp => cp.status === 'archived').length;
         const competitorArchived = animationState.competitor.checkpoints.filter(cp => cp.status === 'archived').length;

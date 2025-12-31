@@ -765,6 +765,18 @@ header {
     color: var(--error-red);
 }
 
+.no-migration-message {
+    text-align: center;
+    padding: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-style: italic;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Legend Box */
 .legend-box {
     margin-top: 1rem;
