@@ -16,19 +16,19 @@
             </div>
             <div class="header-content">
                 <h1>Storage Tiering Architecture Comparison</h1>
-                <p class="subtitle">5PB GPU Training Workflow: VDURA Hybrid (20% SSD) vs All-Flash (100% SSD)</p>
+                <p class="subtitle">GPU Training Workflow: VDURA Hybrid (20% SSD) vs All-Flash (100% SSD)</p>
             </div>
         </header>
 
         <!-- Concept Explanation -->
         <div class="concept-panel">
             <div class="panel-header">
-                <h2>The 5PB Challenge: Hybrid vs All-Flash for GPU Training</h2>
+                <h2>The Checkpoint Challenge: Hybrid vs All-Flash for GPU Training</h2>
             </div>
             <div class="concept-content">
                 <div class="concept-text">
-                    <h3>5PB GPU Training Checkpoint Challenge</h3>
-                    <p>Large-scale GPU training requires massive storage capacity (5PB) but doesn't need it all to be SSD. The key is migrating checkpoints efficiently:</p>
+                    <h3>GPU Training Checkpoint Challenge</h3>
+                    <p>Large-scale GPU training requires massive storage capacity but doesn't need it all to be SSD. The key is migrating checkpoints efficiently:</p>
                     <ul>
                         <li><strong>Fast checkpoint writes</strong> to SSD tier (~100TB checkpoints)</li>
                         <li><strong>Rapid migration</strong> to capacity tier during compute</li>
