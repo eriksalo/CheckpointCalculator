@@ -602,10 +602,12 @@ function calculateCompetitorCost(competitor, pricing, competitorType) {
             hardwareCost = nodeBaseCost + dramCost + slcCost + qlcCost;
         } else {
             // C+D Box: C-Box + D-Box with SCM + QLC
-            const cBoxCost = servers * pricing.c_box.base_cost;
-            const dBoxCost = servers * pricing.d_box.base_cost;
-            const scmCost = servers * pricing.d_box.scm_drives.count * pricing.d_box.scm_drives.cost_per_drive;
-            const qlcCost = servers * pricing.d_box.qlc_ssds.count * pricing.d_box.qlc_ssds[competitor.ssdSize + 'TB'];
+            const cBoxes = competitor.cBoxes;
+            const dBoxes = competitor.dBoxes;
+            const cBoxCost = cBoxes * pricing.c_box.base_cost;
+            const dBoxCost = dBoxes * pricing.d_box.base_cost;
+            const scmCost = dBoxes * pricing.d_box.scm_drives.count * pricing.d_box.scm_drives.cost_per_drive;
+            const qlcCost = dBoxes * pricing.d_box.qlc_ssds.count * pricing.d_box.qlc_ssds[competitor.ssdSize + 'TB'];
             hardwareCost = cBoxCost + dBoxCost + scmCost + qlcCost;
         }
 
