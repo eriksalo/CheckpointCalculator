@@ -325,7 +325,7 @@ header {
 
 .architecture-column {
     display: grid;
-    grid-template-rows: 45px 45px 120px 100px 60px 1fr;
+    grid-template-rows: 45px 60px 180px 100px 60px 1fr;
     gap: 0.5rem;
 }
 
