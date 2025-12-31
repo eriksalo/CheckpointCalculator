@@ -687,7 +687,7 @@ function updateMigrationArrows(numJBODs, vduraBandwidth, competitorBandwidth) {
                         </defs>
                         <path d="M 20 10 L 20 66" stroke="#e79f23" stroke-width="3" fill="none" marker-end="url(#arrowhead-vdura-${i})" />
                     </svg>
-                    <div class="arrow-label-vertical">JBOD ${i + 1}<br>${JBOD_BANDWIDTH} GB/s</div>
+                    <div class="arrow-label-vertical">JBOD ${i + 1}<br><span class="bandwidth-highlight">${JBOD_BANDWIDTH} GB/s</span></div>
                 </div>
             `;
         }
@@ -712,7 +712,7 @@ function updateMigrationArrows(numJBODs, vduraBandwidth, competitorBandwidth) {
                 </defs>
                 <path d="M 20 10 L 20 66" stroke="#ef4444" stroke-width="3" fill="none" marker-end="url(#arrowhead-comp)" stroke-dasharray="6,6" />
             </svg>
-            <div class="arrow-label-vertical">5 GB/s S3</div>
+            <div class="arrow-label-vertical"><span class="bandwidth-highlight">5 GB/s</span> S3</div>
         </div>
     `;
 }

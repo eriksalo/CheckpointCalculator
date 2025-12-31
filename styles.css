@@ -724,6 +724,23 @@ header {
     color: var(--error-red);
 }
 
+.bandwidth-highlight {
+    background: linear-gradient(135deg, rgba(231, 159, 35, 0.3) 0%, rgba(245, 182, 73, 0.2) 100%);
+    border: 1px solid var(--accent-gold);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.7rem;
+    display: inline-block;
+    box-shadow: 0 2px 6px rgba(231, 159, 35, 0.3);
+}
+
+.bottleneck .bandwidth-highlight {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(220, 38, 38, 0.2) 100%);
+    border-color: var(--error-red);
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+}
+
 .bottleneck .arrow-svg-vertical path {
     animation: pulse 2s infinite;
 }
