@@ -80,11 +80,6 @@
             </div>
 
             <div class="form-group">
-                <label for="checkpoint-size">Checkpoint Size (TB)</label>
-                <input type="number" id="checkpoint-size" min="10" max="500" value="100" step="10">
-            </div>
-
-            <div class="form-group">
                 <label for="checkpoint-interval">Checkpoint Interval (minutes)</label>
                 <input type="number" id="checkpoint-interval" min="15" max="180" value="60" step="15">
             </div>
@@ -93,6 +88,11 @@
                 <label for="num-checkpoints">Checkpoints to Retain in SSD</label>
                 <input type="number" id="num-checkpoints" min="2" max="20" value="5" step="1">
                 <span class="hint">How many recent checkpoints kept in fast tier</span>
+            </div>
+
+            <div class="form-group">
+                <label for="checkpoint-size">Checkpoint Size (TB)</label>
+                <input type="number" id="checkpoint-size" min="10" max="500" value="100" step="10">
             </div>
         </div>
 
