@@ -737,6 +737,34 @@ header {
     }
 }
 
+/* Migration Notes */
+.migration-note {
+    text-align: center;
+    padding: 0.5rem 1rem;
+    margin: 0.5rem auto;
+    border-radius: 6px;
+    max-width: 90%;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    font-style: italic;
+}
+
+.migration-note p {
+    margin: 0;
+}
+
+.vdura-note-text {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid var(--success-green);
+    color: var(--success-green);
+}
+
+.competitor-note-text {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid var(--error-red);
+    color: var(--error-red);
+}
+
 /* Legend Box */
 .legend-box {
     margin-top: 1rem;

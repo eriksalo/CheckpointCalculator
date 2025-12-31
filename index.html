@@ -130,6 +130,9 @@
                     <div class="migration-arrows-container" id="vdura-migration-container">
                         <!-- Parallel migration arrows will be generated here -->
                     </div>
+                    <div class="migration-note vdura-note-text">
+                        <p>Parallel transfer has sufficient bandwidth to transfer older checkpoints to HDD during model run</p>
+                    </div>
 
                     <div class="tier-container">
                         <div class="tier-label">
@@ -180,6 +183,9 @@
 
                     <div class="migration-arrows-container bottleneck" id="competitor-migration-container">
                         <!-- S3 migration arrow will be generated here -->
+                    </div>
+                    <div class="migration-note competitor-note-text">
+                        <p>Slow S3 connection not fast enough to move checkpoints to object store and clear SSD layer</p>
                     </div>
 
                     <div class="tier-container">
