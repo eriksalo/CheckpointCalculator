@@ -805,20 +805,27 @@ function updateCheckpointStates(system, deltaMinutes) {
 
     // Keep archived checkpoints - don't remove them
     // Let the HDD/S3 tier fill up to show the migration working
-    // Only remove if we exceed the HDD/S3 capacity
+    // When JBOD fills up, restart the simulation
     const config = systemConfigs[system];
     const archivedCheckpoints = state.checkpoints.filter(cp => cp.status === 'archived');
     const hddCapacity = system === 'vdura' ? config.hddCapacity : config.s3Capacity;
     const maxArchivedCheckpoints = Math.floor(hddCapacity / workflowParams.checkpointSize);
 
-    if (archivedCheckpoints.length > maxArchivedCheckpoints) {
-        const toRemove = archivedCheckpoints.slice(0, archivedCheckpoints.length - maxArchivedCheckpoints);
-        toRemove.forEach(cp => {
-            const index = state.checkpoints.indexOf(cp);
-            if (index > -1) {
-                state.checkpoints.splice(index, 1);
-            }
-        });
+    // Check if HDD/S3 tier is full - restart simulation when it fills
+    if (archivedCheckpoints.length >= maxArchivedCheckpoints) {
+        // Only restart once both systems have filled (to keep them synchronized)
+        const vduraArchived = animationState.vdura.checkpoints.filter(cp => cp.status === 'archived').length;
+        const competitorArchived = animationState.competitor.checkpoints.filter(cp => cp.status === 'archived').length;
+        const vduraMaxArchived = Math.floor(systemConfigs.vdura.hddCapacity / workflowParams.checkpointSize);
+        const competitorMaxArchived = Math.floor(systemConfigs.competitor.s3Capacity / workflowParams.checkpointSize);
+
+        if (vduraArchived >= vduraMaxArchived && competitorArchived >= competitorMaxArchived) {
+            // Both tiers are full - restart the simulation
+            console.log('Both Tier 2 storage tiers full - restarting simulation');
+            setTimeout(() => {
+                seedInitialCheckpoints();
+            }, 1000); // Brief pause before restart for visual effect
+        }
     }
 }
 
