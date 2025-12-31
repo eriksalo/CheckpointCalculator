@@ -533,47 +533,108 @@ function calculateCompetitorVEBox(performanceRequired, capacityTB, pricing) {
 
 // Calculate Competitor V C+D Box (separated performance and capacity)
 function calculateCompetitorVCDBox(performanceRequired, capacityTB, pricing) {
+    const totalCapacityTB = capacityTB;
+
+    // Calculate C boxes needed for performance (40 GB/s per C box)
     const performancePerCBox = pricing.c_box.performance_per_node_gbs;
     const cBoxesForPerformance = Math.ceil(performanceRequired / performancePerCBox);
 
-    const scmCapacityPerDBox = (pricing.d_box.scm_drives.size_gb * pricing.d_box.scm_drives.count) / 1000;
+    // Calculate D boxes needed for capacity
+    // Each D box has: 8× 800GB SCM + 22× QLC SSDs
+    const scmCapacityPerDBox = (pricing.d_box.scm_drives.size_gb * pricing.d_box.scm_drives.count) / 1000; // Convert GB to TB
     const qlcCount = pricing.d_box.qlc_ssds.count;
 
+    // Get available QLC sizes
     const qlcSizes = Object.keys(pricing.d_box.qlc_ssds)
         .filter(key => key !== 'count')
         .map(size => parseFloat(size))
         .sort((a, b) => a - b);
 
-    let chosenQLC = qlcSizes[0];
-    const capacityPerDBox = scmCapacityPerDBox + (chosenQLC * qlcCount);
-    let dBoxesForCapacity = Math.ceil(capacityTB / capacityPerDBox);
+    // Start with minimum D boxes and find the smallest QLC that works
+    let dBoxesForCapacity = pricing.min_d_boxes;
+    let chosenQLC = null;
 
-    if (dBoxesForCapacity < pricing.min_d_boxes) {
-        dBoxesForCapacity = pricing.min_d_boxes;
+    // Try each QLC size to see if we can meet capacity with minimum D boxes
+    for (let qlcSize of qlcSizes) {
+        const capacityPerDBox = scmCapacityPerDBox + (qlcSize * qlcCount);
+        const requiredDBoxes = Math.ceil(totalCapacityTB / capacityPerDBox);
+
+        if (requiredDBoxes <= pricing.min_d_boxes) {
+            chosenQLC = qlcSize;
+            dBoxesForCapacity = pricing.min_d_boxes;
+            break;
+        }
     }
 
-    const cBoxes = Math.max(cBoxesForPerformance, pricing.min_c_boxes);
-    const dBoxes = dBoxesForCapacity;
-    const totalNodes = cBoxes + dBoxes;
-    const ssdCapacity = dBoxes * capacityPerDBox;
+    // If no QLC size works with minimum D boxes, use smallest QLC and scale D boxes
+    if (!chosenQLC) {
+        chosenQLC = qlcSizes[0]; // Start with smallest
+        const capacityPerDBox = scmCapacityPerDBox + (chosenQLC * qlcCount);
+        dBoxesForCapacity = Math.ceil(totalCapacityTB / capacityPerDBox);
+
+        // If even the largest QLC can't do it with calculated D boxes, increase count
+        const largestQLC = qlcSizes[qlcSizes.length - 1];
+        const maxCapacityPerDBox = scmCapacityPerDBox + (largestQLC * qlcCount);
+        const minDBoxesNeeded = Math.ceil(totalCapacityTB / maxCapacityPerDBox);
+
+        if (dBoxesForCapacity < minDBoxesNeeded) {
+            dBoxesForCapacity = minDBoxesNeeded;
+            chosenQLC = largestQLC;
+        }
+    }
+
+    // CRITICAL: Number of D boxes must equal number of C boxes for performance to be valid
+    // Take the maximum of the two requirements
+    const boxCount = Math.max(cBoxesForPerformance, dBoxesForCapacity, pricing.min_c_boxes, pricing.min_d_boxes);
+
+    // Re-check if chosen QLC still works with the new box count
+    const capacityWithChosenQLC = boxCount * (scmCapacityPerDBox + (chosenQLC * qlcCount));
+    if (capacityWithChosenQLC < totalCapacityTB) {
+        // Need to upgrade to larger QLC
+        for (let qlcSize of qlcSizes) {
+            const testCapacity = boxCount * (scmCapacityPerDBox + (qlcSize * qlcCount));
+            if (testCapacity >= totalCapacityTB) {
+                chosenQLC = qlcSize;
+                break;
+            }
+        }
+        // If still not enough, use largest QLC available
+        if (capacityWithChosenQLC < totalCapacityTB) {
+            chosenQLC = qlcSizes[qlcSizes.length - 1];
+        }
+    }
+
+    const cBoxes = boxCount;
+    const dBoxes = boxCount;
 
     // Calculate costs
     const cBoxCost = cBoxes * pricing.c_box.base_cost;
-    const dBoxCost = dBoxes * pricing.d_box.base_cost;
+    const dBoxBaseCost = dBoxes * pricing.d_box.base_cost;
     const scmCost = dBoxes * pricing.d_box.scm_drives.count * pricing.d_box.scm_drives.cost_per_drive;
-    const qlcCost = dBoxes * qlcCount * pricing.d_box.qlc_ssds[chosenQLC + 'TB'];
-    const hardwareCost = cBoxCost + dBoxCost + scmCost + qlcCost;
+    const qlcSSDCost = dBoxes * qlcCount * pricing.d_box.qlc_ssds[chosenQLC + 'TB'];
+
+    const hardwareCost = cBoxCost + dBoxBaseCost + scmCost + qlcSSDCost;
+
+    // Software and support is 55% of total cost
     const softwareCost = hardwareCost * pricing.software_support_multiplier;
     const subtotal = hardwareCost + softwareCost;
+
+    // Add 15% partner margin
     const totalCost = subtotal * 1.15;
 
+    // Calculate actual capacity
+    const actualCapacity = dBoxes * (scmCapacityPerDBox + (chosenQLC * qlcCount));
+
+    // Calculate performance based on C boxes
+    const performanceGBs = cBoxes * performancePerCBox;
+
     return {
-        nodes: totalNodes,
+        nodes: cBoxes + dBoxes,
         cBoxes: cBoxes,
         dBoxes: dBoxes,
         ssdSize: chosenQLC,
-        ssdBandwidth: cBoxes * performancePerCBox,
-        ssdCapacity: ssdCapacity,
+        ssdBandwidth: performanceGBs,
+        ssdCapacity: actualCapacity,
         totalCost: totalCost
     };
 }
