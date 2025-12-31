@@ -420,7 +420,9 @@ header {
 }
 
 .tier-container:nth-child(3) {
-    min-height: 150px;
+    min-height: 180px;
+    max-height: 180px;
+    overflow: visible;
 }
 
 .tier-label {
@@ -636,14 +638,15 @@ header {
 
 /* Migration Arrows */
 .migration-arrows-container {
-    padding: 1rem 0;
+    padding: 0.5rem 0;
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: center;
     gap: 0.25rem;
     flex-wrap: nowrap;
-    min-height: 120px;
+    min-height: 100px;
+    max-height: 100px;
 }
 
 .migration-arrow-vertical {
