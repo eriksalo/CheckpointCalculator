@@ -261,7 +261,7 @@ function calculate() {
         `;
     } else if (competitorType === 'comp_v_cbox_dbox') {
         competitorDetailsHTML = `
-            <p><strong>${competitor.cBoxes} C-Boxes</strong> + <strong>${competitor.dBoxes} D-Boxes</strong>${competitorCostDisplay}</p>
+            <p><strong>${competitor.cBoxes} C-Boxes</strong> + <strong>${competitor.dBoxes} D-Boxes</strong> × 5.4TB SCM + 24× ${competitor.ssdSize}TB QLC${competitorCostDisplay}</p>
             <p><strong>S3 Object Store</strong> @ ${competitor.s3Bandwidth} GB/s (fixed bottleneck)</p>
         `;
     }
