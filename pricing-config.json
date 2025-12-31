@@ -1,0 +1,272 @@
+{
+  "pricing_trends": {
+    "Q2_2025": {
+      "ssd_30tb": 3062,
+      "hdd_30tb": 495
+    },
+    "Q3_2025": {
+      "ssd_30tb": 3207,
+      "hdd_30tb": 495
+    },
+    "Q4_2025": {
+      "ssd_30tb": 7765,
+      "hdd_30tb": 580
+    },
+    "Q1_2026": {
+      "ssd_30tb": 9318,
+      "hdd_30tb": 668
+    },
+    "Q2_2026": {
+      "ssd_30tb": 11181,
+      "hdd_30tb": 768
+    }
+  },
+  "quarters": {
+    "Q2_2025": {
+      "label": "Q2 2025",
+      "vdura": {
+        "velo_director": {
+          "base_cost": 6475,
+          "dram_gb": 750,
+          "description": "VELO Director: Server ($3,175) + CPU ($3,300), SSDs and DRAM computed separately"
+        },
+        "vpod_server": {
+          "base_cost": 6475,
+          "dram_gb": 500,
+          "description": "VPOD Storage Server: Server ($3,175) + CPU ($3,300), SSDs, JBODs, and DRAM computed separately"
+        },
+        "dram_price_per_gb": 5.67,
+        "ssds": {
+          "2TB": 205,
+          "8TB": 680,
+          "15TB": 1344,
+          "30TB": 3062
+        },
+        "jbod_4u108": {
+          "cost": 71424,
+          "capacity_tb": 3240,
+          "description": "4U108 JBOD with 108x 30TB HDDs"
+        },
+        "performance_per_vpod_gbs": 65,
+        "min_velo_count": 3,
+        "min_vpod_count": 3,
+        "ssds_per_velo": 2,
+        "ssds_per_vpod": 12,
+        "velo_ssd_size": "2TB",
+        "software_support_multiplier": 1.0,
+        "software_support_description": "Software and support is 50% of total cost (hardware is 50%)"
+      },
+      "weka_nitro": {
+        "server_base_cost": 3175,
+        "cpu_cost": 3300,
+        "nic_cost": 1800,
+        "dram_gb": 768,
+        "dram_price_per_gb": 5.67,
+        "performance_per_server_gbs": 40,
+        "ssds": {
+          "8TB": 680,
+          "15TB": 1344,
+          "30TB": 3062
+        },
+        "min_servers": 8,
+        "ssds_per_server": 14,
+        "software_support_multiplier": 1.22,
+        "software_support_description": "Software and support is 55% of total cost (hardware is 45%)"
+      },
+      "weka_prime": {
+        "server_base_cost": 3175,
+        "cpu_cost": 3300,
+        "nic_cost": 1800,
+        "dram_gb": 768,
+        "dram_price_per_gb": 5.67,
+        "performance_per_server_gbs": 20,
+        "boot_ssds": {
+          "8TB": 680,
+          "count": 2
+        },
+        "data_ssds": {
+          "30TB": 3062,
+          "61TB": 6228,
+          "count": 18
+        },
+        "min_servers": 8,
+        "ssds_per_server": 20,
+        "software_support_multiplier": 1.22,
+        "software_support_description": "Software and support is 55% of total cost (hardware is 45%)"
+      },
+      "comp_v_ebox": {
+        "node_base_cost": 6475,
+        "dram_gb": 768,
+        "dram_price_per_gb": 5.67,
+        "performance_per_node_gbs": 6,
+        "slc_flash": {
+          "size_tb": 4.8,
+          "cost": 1470
+        },
+        "qlc_ssds": {
+          "30TB": 2450,
+          "60TB": 4899,
+          "122TB": 9985,
+          "count": 9
+        },
+        "min_nodes": 11,
+        "software_support_multiplier": 1.22,
+        "software_support_description": "Software and support is 55% of total cost (hardware is 45%)"
+      },
+      "comp_v_cbox_dbox": {
+        "c_box": {
+          "base_cost": 5544,
+          "performance_per_node_gbs": 40,
+          "description": "C Box: Performance node, 33% less than Competitor W server cost, no SSDs"
+        },
+        "d_box": {
+          "base_cost": 7000,
+          "scm_drives": {
+            "size_gb": 800,
+            "count": 8,
+            "cost_per_drive": 200
+          },
+          "qlc_ssds": {
+            "15TB": 1225,
+            "30TB": 2450,
+            "count": 22
+          },
+          "description": "D Box: Capacity node with SCM + QLC SSDs"
+        },
+        "min_c_boxes": 4,
+        "min_d_boxes": 4,
+        "software_support_multiplier": 1.22,
+        "software_support_description": "Software and support is 55% of total cost (hardware is 45%)"
+      }
+    },
+    "Q2_2026": {
+      "label": "Q2 2026",
+      "vdura": {
+        "velo_director": {
+          "base_cost": 6475,
+          "dram_gb": 750,
+          "description": "VELO Director (without SSDs or DRAM)"
+        },
+        "vpod_server": {
+          "base_cost": 6475,
+          "dram_gb": 500,
+          "description": "VPOD Storage Server (without SSDs, JBODs, or DRAM)"
+        },
+        "dram_price_per_gb": 17.31,
+        "ssds": {
+          "2TB": 1153,
+          "8TB": 4167,
+          "15TB": 6250,
+          "30TB": 11875
+        },
+        "jbod_4u108": {
+          "cost": 89383,
+          "capacity_tb": 3240,
+          "description": "4U108 JBOD with 108x 30TB HDDs"
+        },
+        "performance_per_vpod_gbs": 65,
+        "min_velo_count": 3,
+        "min_vpod_count": 3,
+        "ssds_per_velo": 2,
+        "ssds_per_vpod": 12,
+        "velo_ssd_size": "2TB",
+        "software_support_multiplier": 1.0,
+        "software_support_description": "Software and support is 50% of total cost (hardware is 50%)"
+      },
+      "weka_nitro": {
+        "server_base_cost": 3175,
+        "cpu_cost": 3300,
+        "nic_cost": 1900,
+        "dram_gb": 768,
+        "dram_price_per_gb": 17.31,
+        "performance_per_server_gbs": 40,
+        "ssds": {
+          "8TB": 4167,
+          "15TB": 6250,
+          "30TB": 11875
+        },
+        "min_servers": 8,
+        "ssds_per_server": 14,
+        "software_support_multiplier": 1.22,
+        "software_support_description": "Software and support is 55% of total cost (hardware is 45%)"
+      },
+      "weka_prime": {
+        "server_base_cost": 3175,
+        "cpu_cost": 3300,
+        "nic_cost": 1900,
+        "dram_gb": 768,
+        "dram_price_per_gb": 17.31,
+        "performance_per_server_gbs": 20,
+        "boot_ssds": {
+          "8TB": 4167,
+          "count": 2
+        },
+        "data_ssds": {
+          "30TB": 11875,
+          "61TB": 24146,
+          "count": 18
+        },
+        "min_servers": 8,
+        "ssds_per_server": 20,
+        "software_support_multiplier": 1.22,
+        "software_support_description": "Software and support is 55% of total cost (hardware is 45%)"
+      },
+      "comp_v_ebox": {
+        "node_base_cost": 6475,
+        "dram_gb": 768,
+        "dram_price_per_gb": 17.31,
+        "performance_per_node_gbs": 6,
+        "slc_flash": {
+          "size_tb": 4.8,
+          "cost": 5700
+        },
+        "qlc_ssds": {
+          "30TB": 9500,
+          "60TB": 19000,
+          "122TB": 38708,
+          "count": 9
+        },
+        "min_nodes": 11,
+        "software_support_multiplier": 1.22,
+        "software_support_description": "Software and support is 55% of total cost (hardware is 45%)"
+      },
+      "comp_v_cbox_dbox": {
+        "c_box": {
+          "base_cost": 5544,
+          "performance_per_node_gbs": 40,
+          "description": "C Box: Performance node, 33% less than Competitor W server cost, no SSDs"
+        },
+        "d_box": {
+          "base_cost": 7000,
+          "scm_drives": {
+            "size_gb": 800,
+            "count": 8,
+            "cost_per_drive": 700
+          },
+          "qlc_ssds": {
+            "15TB": 4750,
+            "30TB": 9500,
+            "count": 22
+          },
+          "description": "D Box: Capacity node with SCM + QLC SSDs"
+        },
+        "min_c_boxes": 4,
+        "min_d_boxes": 4,
+        "software_support_multiplier": 1.22,
+        "software_support_description": "Software and support is 55% of total cost (hardware is 45%)"
+      }
+    }
+  },
+  "ssd_price_slider": {
+    "reference_size": "15.36TB",
+    "min_multiplier": 0,
+    "max_multiplier": 1.5,
+    "base_quarter": "Q1_2026",
+    "description": "15TB SSD price can be adjusted from Q2'25 low to Q2'26 +50%"
+  },
+  "notes": {
+    "vdura_architecture": "Hybrid storage system combining SSDs for performance and HDDs for capacity",
+    "weka_architecture": "All-flash storage system using only SSDs",
+    "cost_impact": "Rising SSD prices significantly impact all-flash solutions while hybrid systems can optimize cost using HDDs"
+  }
+}

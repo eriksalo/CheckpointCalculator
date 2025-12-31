@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VDURA Tiering Architecture Comparison | GPU Checkpoint Workflow</title>
+    <link rel="icon" type="image/x-icon" href="https://www.vdura.com/favicon.ico">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-branding">
+                <img src="https://www.vdura.com/wp-content/uploads/2025/10/vdura-wordmark.svg" alt="VDURA" class="logo">
+                <p class="tagline">Velocity • Durability</p>
+            </div>
+            <div class="header-content">
+                <h1>Storage Tiering Architecture Comparison</h1>
+                <p class="subtitle">5PB GPU Training Workflow: VDURA Hybrid (20% SSD) vs All-Flash (100% SSD)</p>
+            </div>
+        </header>
+
+        <!-- Concept Explanation -->
+        <div class="concept-panel">
+            <div class="panel-header">
+                <h2>The 5PB Challenge: Hybrid vs All-Flash for GPU Training</h2>
+            </div>
+            <div class="concept-content">
+                <div class="concept-text">
+                    <h3>5PB GPU Training Checkpoint Challenge</h3>
+                    <p>Large-scale GPU training requires massive storage capacity (5PB) but doesn't need it all to be SSD. The key is migrating checkpoints efficiently:</p>
+                    <ul>
+                        <li><strong>Fast checkpoint writes</strong> to SSD tier (~100TB checkpoints)</li>
+                        <li><strong>Rapid migration</strong> to capacity tier during compute</li>
+                        <li><strong>Keep hot checkpoints</strong> in fast tier, archive old ones</li>
+                    </ul>
+                </div>
+                <div class="concept-comparison">
+                    <div class="arch-box vdura-arch">
+                        <h4>VDURA Hybrid Architecture</h4>
+                        <p><strong>SSD Tier:</strong> Auto-sized VPODs (65 GB/s each)</p>
+                        <p><strong>HDD Tier:</strong> Parallel JBODs @ 21.5 GB/s each</p>
+                        <p class="advantage">✓ Scalable migration bandwidth</p>
+                        <p class="advantage">✓ Cost-optimized with fast tiering</p>
+                    </div>
+                    <div class="arch-box competitor-arch">
+                        <h4>All-Flash + S3 Architecture</h4>
+                        <p><strong>SSD Tier:</strong> Auto-sized nodes (40 GB/s each)</p>
+                        <p><strong>S3 Tier:</strong> Object Store @ 5 GB/s FIXED</p>
+                        <p class="limitation">✗ 5 GB/s bottleneck to S3</p>
+                        <p class="limitation">✗ More expensive all-SSD tier</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Controls -->
+        <div class="input-panel">
+            <div class="panel-header">
+                <h2>System Requirements</h2>
+            </div>
+
+            <div class="form-group">
+                <label for="performance">Read/Write Performance Required (GB/s)</label>
+                <input type="number" id="performance" min="195" max="5000" value="1000" step="65">
+            </div>
+
+            <div class="form-group">
+                <label for="total-capacity">Total Raw Storage Capacity (PB)</label>
+                <input type="number" id="total-capacity" min="1" max="50" value="5" step="1">
+            </div>
+
+            <div class="form-group">
+                <label for="ssd-percentage">VDURA SSD Percentage (%)</label>
+                <input type="range" id="ssd-percentage" min="5" max="100" value="20" step="5">
+                <div class="slider-value">
+                    <span id="ssd-percentage-display">20</span>%
+                </div>
+                <span class="hint">Percentage of capacity using SSDs vs HDDs</span>
+            </div>
+
+            <div class="form-group">
+                <label for="checkpoint-size">Checkpoint Size (TB)</label>
+                <input type="number" id="checkpoint-size" min="10" max="500" value="100" step="10">
+            </div>
+
+            <div class="form-group">
+                <label for="checkpoint-interval">Checkpoint Interval (minutes)</label>
+                <input type="number" id="checkpoint-interval" min="15" max="180" value="60" step="15">
+            </div>
+
+            <div class="form-group">
+                <label for="num-checkpoints">Checkpoints to Retain in SSD</label>
+                <input type="number" id="num-checkpoints" min="2" max="20" value="5" step="1">
+                <span class="hint">How many recent checkpoints kept in fast tier</span>
+            </div>
+        </div>
+
+        <!-- Visualization Section -->
+        <div class="visualization-section">
+            <div class="panel-header">
+                <h2>Storage Architecture Visualization</h2>
+                <p class="subtitle">Width = Bandwidth, Depth = Capacity • Live Animation (1 checkpoint/sec)</p>
+            </div>
+
+            <div class="comparison-grid">
+                <!-- VDURA Visualization -->
+                <div class="architecture-column">
+                    <h3 class="arch-title vdura-title">VDURA Hybrid Architecture</h3>
+                    <div class="system-details" id="vdura-system-details">
+                        <p><strong>16 VPODs</strong> × 8TB SSDs (12 per VPOD)</p>
+                        <p><strong>3 JBODs</strong> × 3.2 PB (108× 30TB HDDs)</p>
+                    </div>
+
+                    <div class="tier-container">
+                        <div class="tier-label">
+                            <h4>Tier 1: All-Flash</h4>
+                            <div class="tier-specs" id="vdura-ssd-specs">
+                                <span class="spec-bandwidth">640 GB/s</span>
+                                <span class="spec-capacity">120 TB</span>
+                            </div>
+                        </div>
+                        <div class="storage-box ssd-tier" id="vdura-ssd-box">
+                            <div class="checkpoint-blocks" id="vdura-checkpoints">
+                                <!-- Grid cells will be added here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="migration-arrows-container" id="vdura-migration-container">
+                        <!-- Parallel migration arrows will be generated here -->
+                    </div>
+
+                    <div class="tier-container">
+                        <div class="tier-label">
+                            <h4>Tier 2: Parallel JBODs</h4>
+                            <div class="tier-specs" id="vdura-hdd-specs">
+                                <span class="spec-bandwidth">64.5 GB/s</span>
+                                <span class="spec-capacity">9,720 TB</span>
+                            </div>
+                        </div>
+                        <div class="storage-box hdd-tier" id="vdura-hdd-box">
+                            <div class="archived-blocks" id="vdura-archived">
+                                <!-- Grid cells will be added here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Competitor Visualization -->
+                <div class="architecture-column">
+                    <select id="competitor-type" class="arch-title competitor-title competitor-dropdown-title">
+                        <option value="weka_nitro">Competitor 'W' Nitro (All-Flash)</option>
+                        <option value="weka_prime">Competitor 'W' Prime (All-Flash)</option>
+                        <option value="comp_v_ebox">Competitor 'V' E-Box (SLC+QLC)</option>
+                        <option value="comp_v_cbox_dbox" selected>Competitor 'V' C+D Box (SCM+QLC)</option>
+                    </select>
+                    <div class="system-details" id="competitor-system-details">
+                        <p><strong>25 Nodes</strong> × 15TB SSDs (14 per node)</p>
+                        <p><strong>S3 Object Store</strong> @ 5 GB/s (fixed bottleneck)</p>
+                    </div>
+
+                    <div class="tier-container">
+                        <div class="tier-label">
+                            <h4>Tier 1: All-Flash</h4>
+                            <div class="tier-specs" id="competitor-ssd-specs">
+                                <span class="spec-bandwidth">320 GB/s</span>
+                                <span class="spec-capacity">120 TB</span>
+                            </div>
+                        </div>
+                        <div class="storage-box ssd-tier" id="competitor-ssd-box">
+                            <div class="checkpoint-blocks" id="competitor-checkpoints">
+                                <!-- Grid cells will be added here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="migration-arrows-container bottleneck" id="competitor-migration-container">
+                        <!-- S3 migration arrow will be generated here -->
+                    </div>
+
+                    <div class="tier-container">
+                        <div class="tier-label">
+                            <h4>Tier 2: S3 Object Store</h4>
+                            <div class="tier-specs" id="competitor-s3-specs">
+                                <span class="spec-bandwidth">5 GB/s</span>
+                                <span class="spec-capacity">Unlimited</span>
+                            </div>
+                        </div>
+                        <div class="storage-box s3-tier" id="competitor-s3-box">
+                            <div class="archived-blocks" id="competitor-archived">
+                                <!-- Grid cells will be added here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="legend-box">
+                <h4>Capacity Grid Legend (Each cell = 100TB checkpoint)</h4>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <div class="legend-swatch empty"></div>
+                        <span>Empty capacity</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-swatch active"></div>
+                        <span>Active checkpoint</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-swatch migrating"></div>
+                        <span>Migrating checkpoint</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-swatch archived"></div>
+                        <span>Archived checkpoint</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Results -->
+        <div class="analysis-section">
+            <div class="panel-header">
+                <h2>Workflow Analysis</h2>
+            </div>
+
+            <div class="results-grid">
+                <div class="result-card vdura-card">
+                    <h3>VDURA Performance</h3>
+                    <div class="metric">
+                        <span class="metric-label">Migration Time per Checkpoint</span>
+                        <span class="metric-value" id="vdura-migration-time">9.3 min</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Can Keep Up with Workflow?</span>
+                        <span class="metric-value success" id="vdura-can-keep-up">✓ YES</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">SSD Tier Utilization</span>
+                        <span class="metric-value" id="vdura-utilization">75%</span>
+                    </div>
+                </div>
+
+                <div class="result-card competitor-card">
+                    <h3>Competitor Performance</h3>
+                    <div class="metric">
+                        <span class="metric-label">Migration Time per Checkpoint</span>
+                        <span class="metric-value" id="competitor-migration-time">33.3 min</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Can Keep Up with Workflow?</span>
+                        <span class="metric-value failure" id="competitor-can-keep-up">✗ NO</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">SSD Tier Utilization</span>
+                        <span class="metric-value" id="competitor-utilization">100%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="insight-box">
+                <h4>💡 Key Insight</h4>
+                <p id="insight-text">
+                    VDURA's parallel JBOD architecture provides 13x faster migration (64.5 GB/s vs 5 GB/s),
+                    enabling efficient checkpoint cycling while competitors become bottlenecked and fill their SSD tier.
+                </p>
+            </div>
+        </div>
+
+        <footer>
+            <p>VDURA Enterprise Storage Solutions | Parallel HDD Tiering Architecture</p>
+        </footer>
+    </div>
+
+    <script src="calculator.js"></script>
+</body>
+</html>
