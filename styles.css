@@ -470,7 +470,7 @@ header {
 }
 
 .tier-container:nth-child(3) {
-    min-height: auto;
+    min-height: 120px;
     overflow: visible;
 }
 
@@ -482,6 +482,7 @@ header {
     background: rgba(5, 7, 13, 0.5);
     border-radius: 6px;
     width: 100%;
+    min-height: 65px;
 }
 
 .tier-label-header {
@@ -516,6 +517,8 @@ header {
     display: flex;
     gap: 1rem;
     font-size: 0.8rem;
+    min-height: 38px;
+    align-items: center;
 }
 
 .spec-bandwidth {
