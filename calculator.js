@@ -289,14 +289,12 @@ function calculate() {
     const vduraKeepUpEl = document.getElementById('vdura-can-keep-up');
     vduraKeepUpEl.textContent = vduraCanKeepUp ? '✓ YES' : '✗ NO';
     vduraKeepUpEl.className = vduraCanKeepUp ? 'metric-value success' : 'metric-value failure';
-    document.getElementById('vdura-utilization').textContent = `${vduraUtilization.toFixed(0)}%`;
 
     // Update analysis results - Competitor
     document.getElementById('competitor-migration-time').textContent = `${competitorMigrationTime.toFixed(1)} min`;
     const compKeepUpEl = document.getElementById('competitor-can-keep-up');
     compKeepUpEl.textContent = competitorCanKeepUp ? '✓ YES' : '✗ NO';
     compKeepUpEl.className = competitorCanKeepUp ? 'metric-value success' : 'metric-value failure';
-    document.getElementById('competitor-utilization').textContent = `${competitorUtilization.toFixed(0)}%`;
 
     // Update insight text
     const bandwidthRatio = (vdura.migrationBandwidth / competitor.migrationBandwidth).toFixed(0);
