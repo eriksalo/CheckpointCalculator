@@ -83,6 +83,16 @@ function calculate() {
     const competitorColor = isCompetitorW ? 'purple' : 'blue';
     updateCompetitorColors(competitorColor);
 
+    // Adjust grid layout for high capacity systems
+    const archColumns = document.querySelectorAll('.architecture-column');
+    archColumns.forEach(col => {
+        if (totalCapacityPB > 25) {
+            col.classList.add('high-capacity');
+        } else {
+            col.classList.remove('high-capacity');
+        }
+    });
+
     // Architecture constants
     const VPOD_PERFORMANCE = 65; // GB/s per VPOD
     const VPOD_SSD_COUNT = 12; // SSDs per VPOD
@@ -325,11 +335,6 @@ function calculate() {
     console.log('Checkpoint interval:', checkpointInterval, 'min');
 
     // Store workflow parameters for animation
-    const paramsChanged =
-        workflowParams.checkpointSize !== checkpointSize ||
-        workflowParams.checkpointInterval !== checkpointInterval ||
-        workflowParams.numCheckpoints !== numCheckpoints;
-
     workflowParams = {
         checkpointSize: checkpointSize,
         checkpointInterval: checkpointInterval,
@@ -340,9 +345,9 @@ function calculate() {
         competitorCanKeepUp: competitorCanKeepUp
     };
 
-    // Restart animation if parameters changed (especially checkpoint interval which affects speed)
-    if (paramsChanged && animationInterval) {
-        startAnimation(); // Restart with new time acceleration
+    // Always restart animation when any input changes
+    if (animationInterval) {
+        startAnimation();
     }
 }
 
@@ -352,6 +357,8 @@ function calculate() {
 function updateCompetitorColors(color) {
     const competitorColumn = document.querySelector('.architecture-column:last-child');
     const competitorTitle = document.querySelector('.competitor-title');
+    const competitorResultCard = document.querySelector('.result-card.competitor-card');
+    const competitorArchBox = document.querySelector('.arch-box.competitor-arch');
     const competitorLabels = document.querySelectorAll('.bottleneck .arrow-label-vertical');
 
     if (color === 'purple') {
@@ -359,11 +366,19 @@ function updateCompetitorColors(color) {
         competitorColumn?.classList.add('competitor-purple');
         competitorTitle?.classList.remove('competitor-blue-title');
         competitorTitle?.classList.add('competitor-purple-title');
+        competitorResultCard?.classList.remove('competitor-blue');
+        competitorResultCard?.classList.add('competitor-purple');
+        competitorArchBox?.classList.remove('competitor-blue');
+        competitorArchBox?.classList.add('competitor-purple');
     } else {
         competitorColumn?.classList.remove('competitor-purple');
         competitorColumn?.classList.add('competitor-blue');
         competitorTitle?.classList.remove('competitor-purple-title');
         competitorTitle?.classList.add('competitor-blue-title');
+        competitorResultCard?.classList.remove('competitor-purple');
+        competitorResultCard?.classList.add('competitor-blue');
+        competitorArchBox?.classList.remove('competitor-purple');
+        competitorArchBox?.classList.add('competitor-blue');
     }
 }
 
@@ -670,6 +685,15 @@ function updateMigrationArrows(numJBODs, vduraBandwidth, competitorBandwidth) {
     // VDURA: Create one arrow per JBOD (or show message if 100% SSD)
     const vduraContainer = document.getElementById('vdura-migration-container');
     let vduraHTML = '';
+
+    // Add compact class based on number of JBODs
+    vduraContainer.classList.remove('many-arrows', 'very-many-arrows');
+    if (numJBODs > 12) {
+        vduraContainer.classList.add('very-many-arrows');
+    } else if (numJBODs > 7) {
+        vduraContainer.classList.add('many-arrows');
+    }
+
     if (numJBODs === 0) {
         vduraHTML = '<div class="no-migration-message">100% SSD - No HDD Tier</div>';
     } else {
@@ -867,28 +891,37 @@ function updateCheckpointStates(system, deltaMinutes) {
 
     // Keep archived checkpoints - don't remove them
     // Let the HDD/S3 tier fill up to show the migration working
-    // When JBOD fills up, restart the simulation
+    // When JBOD fills up or SSD is full (in 100% SSD case), stop the simulation
     const config = systemConfigs[system];
     const archivedCheckpoints = state.checkpoints.filter(cp => cp.status === 'archived');
     const hddCapacity = system === 'vdura' ? config.hddCapacity : config.s3Capacity;
     const maxArchivedCheckpoints = Math.floor(hddCapacity / workflowParams.checkpointSize);
 
-    // Check if HDD/S3 tier is full - restart simulation when it fills
-    // Skip if no HDD capacity (100% SSD)
-    if (hddCapacity > 0 && archivedCheckpoints.length >= maxArchivedCheckpoints) {
-        // Only restart once both systems have filled (to keep them synchronized)
-        const vduraArchived = animationState.vdura.checkpoints.filter(cp => cp.status === 'archived').length;
-        const competitorArchived = animationState.competitor.checkpoints.filter(cp => cp.status === 'archived').length;
-        const vduraMaxArchived = Math.floor(systemConfigs.vdura.hddCapacity / workflowParams.checkpointSize);
-        const competitorMaxArchived = Math.floor(systemConfigs.competitor.s3Capacity / workflowParams.checkpointSize);
+    // Check if we should stop the simulation
+    let shouldStop = false;
 
-        if (vduraArchived >= vduraMaxArchived && competitorArchived >= competitorMaxArchived) {
-            // Both tiers are full - restart the simulation
-            console.log('Both Tier 2 storage tiers full - restarting simulation');
-            setTimeout(() => {
-                seedInitialCheckpoints();
-            }, 1000); // Brief pause before restart for visual effect
+    // Case 1: 100% SSD configuration - stop when any SSD tier is full
+    if (systemConfigs.vdura.hddCapacity === 0) {
+        if (animationState.vdura.ssdFull || animationState.competitor.ssdFull) {
+            shouldStop = true;
+            console.log('100% SSD: SSD tier full - stopping simulation');
         }
+    }
+    // Case 2: Hybrid configuration - stop when VDURA JBOD is full
+    else if (hddCapacity > 0 && archivedCheckpoints.length >= maxArchivedCheckpoints) {
+        const vduraArchived = animationState.vdura.checkpoints.filter(cp => cp.status === 'archived').length;
+        const vduraMaxArchived = Math.floor(systemConfigs.vdura.hddCapacity / workflowParams.checkpointSize);
+
+        if (vduraArchived >= vduraMaxArchived) {
+            shouldStop = true;
+            console.log('VDURA JBOD full - stopping simulation');
+        }
+    }
+
+    // Stop the animation if conditions are met
+    if (shouldStop && animationInterval) {
+        clearInterval(animationInterval);
+        animationInterval = null;
     }
 }
 

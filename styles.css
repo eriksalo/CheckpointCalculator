@@ -188,6 +188,25 @@ header {
     color: var(--accent-purple-light);
 }
 
+/* Dynamic competitor arch-box theming */
+.arch-box.competitor-arch.competitor-purple {
+    border-color: var(--accent-purple);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, transparent 100%);
+}
+
+.arch-box.competitor-arch.competitor-purple h4 {
+    color: var(--accent-purple-light);
+}
+
+.arch-box.competitor-arch.competitor-blue {
+    border-color: var(--accent-blue);
+    background: linear-gradient(135deg, rgba(31, 217, 254, 0.1) 0%, transparent 100%);
+}
+
+.arch-box.competitor-arch.competitor-blue h4 {
+    color: var(--accent-blue);
+}
+
 .advantage {
     color: var(--success-green) !important;
 }
@@ -325,8 +344,12 @@ header {
 
 .architecture-column {
     display: grid;
-    grid-template-rows: 45px 60px 180px 100px 60px 1fr;
+    grid-template-rows: 45px 60px 320px 130px 60px 1fr;
     gap: 0.5rem;
+}
+
+.architecture-column.high-capacity {
+    grid-template-rows: 45px 60px 420px 130px 60px 1fr;
 }
 
 .competitor-dropdown-title {
@@ -427,6 +450,25 @@ header {
 }
 
 .competitor-blue .competitor-card h3 {
+    color: var(--accent-blue);
+}
+
+/* Direct application of competitor colors to result cards */
+.competitor-card.competitor-purple {
+    border-color: var(--accent-purple);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, transparent 100%);
+}
+
+.competitor-card.competitor-purple h3 {
+    color: var(--accent-purple-light);
+}
+
+.competitor-card.competitor-blue {
+    border-color: var(--accent-blue);
+    background: linear-gradient(135deg, rgba(31, 217, 254, 0.1) 0%, transparent 100%);
+}
+
+.competitor-card.competitor-blue h3 {
     color: var(--accent-blue);
 }
 
@@ -725,6 +767,48 @@ header {
 .arrow-svg-vertical {
     width: 40px;
     height: 80px;
+}
+
+/* Compact arrows when there are many JBODs */
+.many-arrows .migration-arrow-vertical {
+    gap: 0.1rem;
+}
+
+.many-arrows .arrow-svg-vertical {
+    width: 28px;
+    height: 70px;
+}
+
+.many-arrows .arrow-label-vertical {
+    font-size: 0.55rem;
+}
+
+.many-arrows {
+    gap: 0.15rem !important;
+}
+
+/* Even more compact for very many JBODs */
+.very-many-arrows .migration-arrow-vertical {
+    gap: 0.05rem;
+}
+
+.very-many-arrows .arrow-svg-vertical {
+    width: 20px;
+    height: 60px;
+}
+
+.very-many-arrows .arrow-label-vertical {
+    font-size: 0.45rem;
+    line-height: 1.1;
+}
+
+.very-many-arrows .bandwidth-highlight {
+    padding: 0.1rem 0.25rem;
+    font-size: 0.5rem;
+}
+
+.very-many-arrows {
+    gap: 0.1rem !important;
 }
 
 .arrow-label-vertical {
