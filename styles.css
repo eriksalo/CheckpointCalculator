@@ -325,7 +325,7 @@ header {
 
 .architecture-column {
     display: grid;
-    grid-template-rows: auto auto auto auto auto 1fr;
+    grid-template-rows: 45px 45px 120px 100px 60px 1fr;
     gap: 0.5rem;
 }
 
@@ -600,7 +600,7 @@ header {
 
 .capacity-grid {
     display: grid;
-    grid-template-columns: repeat(10, 30px);
+    grid-template-columns: repeat(15, 30px);
     gap: 3px;
     width: auto;
 }
@@ -773,12 +773,16 @@ header {
 .migration-note {
     text-align: center;
     padding: 0.5rem 1rem;
-    margin: 0.5rem auto;
+    margin: 0 auto;
     border-radius: 6px;
     max-width: 90%;
-    font-size: 0.8rem;
-    line-height: 1.4;
+    font-size: 0.75rem;
+    line-height: 1.3;
     font-style: italic;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .migration-note p {
