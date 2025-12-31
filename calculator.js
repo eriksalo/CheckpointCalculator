@@ -275,7 +275,6 @@ function calculate() {
     `;
     document.getElementById('competitor-s3-specs').innerHTML = `
         <span class="spec-bandwidth">${competitor.s3Bandwidth} GB/s</span>
-        <span class="spec-capacity">${(competitor.s3Capacity / 1000).toFixed(1)} PB</span>
     `;
 
     // Storage boxes now auto-size based on grid content
