@@ -583,16 +583,19 @@ function calculateCompetitorVCDBox(performanceRequired, capacityTB, pricing) {
         }
     }
 
-    // CRITICAL: Number of D boxes must equal number of C boxes for performance to be valid
-    // Take the maximum of the two requirements
-    const boxCount = Math.max(cBoxesForPerformance, dBoxesForCapacity, pricing.min_c_boxes, pricing.min_d_boxes);
+    // C boxes are defined by performance requirement
+    const cBoxes = Math.max(cBoxesForPerformance, pricing.min_c_boxes);
 
-    // Re-check if chosen QLC still works with the new box count
-    const capacityWithChosenQLC = boxCount * (scmCapacityPerDBox + (chosenQLC * qlcCount));
+    // D boxes must be at least equal to C boxes (can't have more C than D)
+    // Also must meet capacity requirement
+    const dBoxes = Math.max(dBoxesForCapacity, cBoxes, pricing.min_d_boxes);
+
+    // Re-check if chosen QLC still works with the final D box count
+    const capacityWithChosenQLC = dBoxes * (scmCapacityPerDBox + (chosenQLC * qlcCount));
     if (capacityWithChosenQLC < totalCapacityTB) {
         // Need to upgrade to larger QLC
         for (let qlcSize of qlcSizes) {
-            const testCapacity = boxCount * (scmCapacityPerDBox + (qlcSize * qlcCount));
+            const testCapacity = dBoxes * (scmCapacityPerDBox + (qlcSize * qlcCount));
             if (testCapacity >= totalCapacityTB) {
                 chosenQLC = qlcSize;
                 break;
@@ -603,9 +606,6 @@ function calculateCompetitorVCDBox(performanceRequired, capacityTB, pricing) {
             chosenQLC = qlcSizes[qlcSizes.length - 1];
         }
     }
-
-    const cBoxes = boxCount;
-    const dBoxes = boxCount;
 
     // Calculate costs
     const cBoxCost = cBoxes * pricing.c_box.base_cost;
