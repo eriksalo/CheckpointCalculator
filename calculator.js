@@ -197,18 +197,14 @@ function calculate() {
         };
     }
 
-    // Calculate costs if pricing data is available
-    if (pricingData) {
+    // Calculate VDURA costs if pricing data is available
+    if (pricingData && vdura) {
         const q2Pricing = pricingData.quarters['Q2_2026'];
-
-        // VDURA costs
         const vduraCost = calculateVDURACost(vdura, q2Pricing.vdura);
         vdura.totalCost = vduraCost;
-
-        // Competitor costs
-        const competitorCost = calculateCompetitorCost(competitor, q2Pricing[competitorType], competitorType);
-        competitor.totalCost = competitorCost;
     }
+
+    // Competitor already has totalCost from calculation functions
 
     // Store configs globally for animation system
     systemConfigs.vdura = vdura;
@@ -228,7 +224,7 @@ function calculate() {
     const competitorUtilization = Math.min(100, (totalCheckpointCapacity / competitor.ssdCapacity) * 100);
 
     // Update VDURA system details
-    const vduraCostDisplay = vdura.totalCost ? ` • <span class="cost-display">$${(vdura.totalCost / 1000000).toFixed(2)}M</span>` : '';
+    const vduraCostDisplay = vdura.totalCost ? ` • <span class="cost-display">$${(vdura.totalCost / 1000000).toFixed(2)}M (Q2'26 Est)</span>` : '';
     document.getElementById('vdura-system-details').innerHTML = `
         <p><strong>${vdura.velos} VELOs</strong> + <strong>${vdura.vpods} VPODs</strong> × ${vdura.ssdSize}TB SSDs${vduraCostDisplay}</p>
         <p><strong>${vdura.jbods} JBODs</strong> × 3.2 PB (108× 30TB HDDs each)</p>
@@ -245,7 +241,7 @@ function calculate() {
     `;
 
     // Update Competitor system details based on type
-    const competitorCostDisplay = competitor.totalCost ? ` • <span class="cost-display">$${(competitor.totalCost / 1000000).toFixed(2)}M</span>` : '';
+    const competitorCostDisplay = competitor.totalCost ? ` • <span class="cost-display">$${(competitor.totalCost / 1000000).toFixed(2)}M (Q2'26 Est)</span>` : '';
     let competitorDetailsHTML = '';
 
     if (competitorType === 'weka_nitro') {
@@ -381,7 +377,7 @@ function calculateCompetitorWEKA(performanceRequired, capacityTB, pricing, compe
 
     let servers = Math.max(serversForPerformance, pricing.min_servers);
     const ssdsPerServer = pricing.ssds_per_server;
-    let ssdSize;
+    let ssdSize, ssdCost;
 
     if (competitorType === 'weka_prime') {
         // Prime: 2× 8TB boot + 18× data SSDs
@@ -412,12 +408,25 @@ function calculateCompetitorWEKA(performanceRequired, capacityTB, pricing, compe
         ssdSize = chosenDataSSD;
         const capacityPerServer = bootCapacityPerServer + (chosenDataSSD * pricing.data_ssds.count);
         const ssdCapacity = servers * capacityPerServer;
+        ssdCost = servers * (pricing.boot_ssds.count * pricing.boot_ssds['8TB'] +
+                            pricing.data_ssds.count * pricing.data_ssds[chosenDataSSD + 'TB']);
+
+        // Calculate costs
+        const serverBaseCost = servers * pricing.server_base_cost;
+        const cpuCost = servers * pricing.cpu_cost;
+        const dramCost = servers * pricing.dram_gb * pricing.dram_price_per_gb;
+        const nicCost = servers * pricing.nic_cost;
+        const hardwareCost = serverBaseCost + cpuCost + dramCost + nicCost + ssdCost;
+        const softwareCost = hardwareCost * pricing.software_support_multiplier;
+        const subtotal = hardwareCost + softwareCost;
+        const totalCost = subtotal * 1.15;
 
         return {
             nodes: servers,
             ssdSize: chosenDataSSD,
             ssdBandwidth: servers * performancePerServer,
-            ssdCapacity: ssdCapacity
+            ssdCapacity: ssdCapacity,
+            totalCost: totalCost
         };
     } else {
         // Nitro: standard 8TB/15TB/30TB SSDs
@@ -445,12 +454,24 @@ function calculateCompetitorWEKA(performanceRequired, capacityTB, pricing, compe
 
         ssdSize = chosenSSDSize;
         const ssdCapacity = servers * ssdsPerServer * chosenSSDSize;
+        ssdCost = servers * ssdsPerServer * pricing.ssds[chosenSSDSize + 'TB'];
+
+        // Calculate costs
+        const serverBaseCost = servers * pricing.server_base_cost;
+        const cpuCost = servers * pricing.cpu_cost;
+        const dramCost = servers * pricing.dram_gb * pricing.dram_price_per_gb;
+        const nicCost = servers * pricing.nic_cost;
+        const hardwareCost = serverBaseCost + cpuCost + dramCost + nicCost + ssdCost;
+        const softwareCost = hardwareCost * pricing.software_support_multiplier;
+        const subtotal = hardwareCost + softwareCost;
+        const totalCost = subtotal * 1.15;
 
         return {
             nodes: servers,
             ssdSize: chosenSSDSize,
             ssdBandwidth: servers * performancePerServer,
-            ssdCapacity: ssdCapacity
+            ssdCapacity: ssdCapacity,
+            totalCost: totalCost
         };
     }
 }
@@ -491,11 +512,22 @@ function calculateCompetitorVEBox(performanceRequired, capacityTB, pricing) {
 
     const ssdCapacity = nodes * (slcSizeTB + (chosenQLC * qlcCount));
 
+    // Calculate costs
+    const nodeBaseCost = nodes * pricing.node_base_cost;
+    const dramCost = nodes * pricing.dram_gb * pricing.dram_price_per_gb;
+    const slcCost = nodes * pricing.slc_flash.cost;
+    const qlcCost = nodes * qlcCount * pricing.qlc_ssds[chosenQLC + 'TB'];
+    const hardwareCost = nodeBaseCost + dramCost + slcCost + qlcCost;
+    const softwareCost = hardwareCost * pricing.software_support_multiplier;
+    const subtotal = hardwareCost + softwareCost;
+    const totalCost = subtotal * 1.15;
+
     return {
         nodes: nodes,
         ssdSize: chosenQLC,
         ssdBandwidth: nodes * performancePerNode,
-        ssdCapacity: ssdCapacity
+        ssdCapacity: ssdCapacity,
+        totalCost: totalCost
     };
 }
 
@@ -525,13 +557,24 @@ function calculateCompetitorVCDBox(performanceRequired, capacityTB, pricing) {
     const totalNodes = cBoxes + dBoxes;
     const ssdCapacity = dBoxes * capacityPerDBox;
 
+    // Calculate costs
+    const cBoxCost = cBoxes * pricing.c_box.base_cost;
+    const dBoxCost = dBoxes * pricing.d_box.base_cost;
+    const scmCost = dBoxes * pricing.d_box.scm_drives.count * pricing.d_box.scm_drives.cost_per_drive;
+    const qlcCost = dBoxes * qlcCount * pricing.d_box.qlc_ssds[chosenQLC + 'TB'];
+    const hardwareCost = cBoxCost + dBoxCost + scmCost + qlcCost;
+    const softwareCost = hardwareCost * pricing.software_support_multiplier;
+    const subtotal = hardwareCost + softwareCost;
+    const totalCost = subtotal * 1.15;
+
     return {
         nodes: totalNodes,
         cBoxes: cBoxes,
         dBoxes: dBoxes,
         ssdSize: chosenQLC,
         ssdBandwidth: cBoxes * performancePerCBox,
-        ssdCapacity: ssdCapacity
+        ssdCapacity: ssdCapacity,
+        totalCost: totalCost
     };
 }
 
@@ -560,61 +603,6 @@ function calculateVDURACost(vdura, pricing) {
     const totalCost = subtotal * 1.15;
 
     return totalCost;
-}
-
-// Calculate Competitor system cost
-function calculateCompetitorCost(competitor, pricing, competitorType) {
-    if (!pricing) return 0;
-
-    const servers = competitor.nodes;
-    let hardwareCost = 0;
-
-    if (competitorType === 'weka_nitro' || competitorType === 'weka_prime') {
-        // Competitor W (WEKA)
-        const serverBaseCost = servers * pricing.server_base_cost;
-        const cpuCost = servers * pricing.cpu_cost;
-        const dramCost = servers * pricing.dram_gb * pricing.dram_price_per_gb;
-        const nicCost = servers * pricing.nic_cost;
-
-        let ssdCost = 0;
-        if (competitorType === 'weka_prime') {
-            // Prime: boot SSDs + data SSDs
-            ssdCost = servers * (pricing.boot_ssds.count * pricing.boot_ssds['8TB'] +
-                                pricing.data_ssds.count * pricing.data_ssds[competitor.ssdSize + 'TB']);
-        } else {
-            // Nitro: standard SSDs
-            ssdCost = servers * pricing.ssds_per_server * pricing.ssds[competitor.ssdSize + 'TB'];
-        }
-
-        hardwareCost = serverBaseCost + cpuCost + dramCost + nicCost + ssdCost;
-
-        // Competitor W: Software and support is 55% of total cost (hardware = 45%)
-        const totalBeforeMargin = hardwareCost / 0.45;
-        return totalBeforeMargin * 1.15;
-    } else {
-        // Competitor V (E-Box or C+D Box)
-        if (competitorType === 'comp_v_ebox') {
-            // E-Box: node cost + DRAM + SLC flash + QLC SSDs
-            const nodeBaseCost = servers * pricing.node_base_cost;
-            const dramCost = servers * pricing.dram_gb * pricing.dram_price_per_gb;
-            const slcCost = servers * pricing.slc_flash.cost;
-            const qlcCost = servers * pricing.qlc_ssds.count * pricing.qlc_ssds[competitor.ssdSize + 'TB'];
-            hardwareCost = nodeBaseCost + dramCost + slcCost + qlcCost;
-        } else {
-            // C+D Box: C-Box + D-Box with SCM + QLC
-            const cBoxes = competitor.cBoxes;
-            const dBoxes = competitor.dBoxes;
-            const cBoxCost = cBoxes * pricing.c_box.base_cost;
-            const dBoxCost = dBoxes * pricing.d_box.base_cost;
-            const scmCost = dBoxes * pricing.d_box.scm_drives.count * pricing.d_box.scm_drives.cost_per_drive;
-            const qlcCost = dBoxes * pricing.d_box.qlc_ssds.count * pricing.d_box.qlc_ssds[competitor.ssdSize + 'TB'];
-            hardwareCost = cBoxCost + dBoxCost + scmCost + qlcCost;
-        }
-
-        // Competitor V: Software and support is 55% of total cost (hardware = 45%)
-        const totalBeforeMargin = hardwareCost / 0.45;
-        return totalBeforeMargin * 1.15;
-    }
 }
 
 // Update migration arrows
