@@ -7,9 +7,11 @@
     --card-bg: #141829;
     --accent-gold: #e79f23;
     --accent-gold-light: #f5b649;
+    --accent-cyan: #46b0ff;
     --accent-purple: #a855f7;
     --accent-purple-light: #c084fc;
     --accent-blue: #1fd9fe;
+    --accent-blue-light: #5fe5ff;
     --text-primary: #f8fafc;
     --text-secondary: #e2e8f0;
     --text-muted: #94a3b8;
@@ -199,7 +201,7 @@ header {
     background: var(--card-bg);
     border-radius: 12px;
     padding: 1rem;
-    border: 1px solid var(--border-color);
+    border: 2px solid var(--accent-gold);
     margin-bottom: 1rem;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -241,6 +243,46 @@ header {
 
 .form-group input[type="range"] {
     padding: 0;
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(90deg, var(--accent-gold) 0%, var(--accent-cyan) 100%);
+    border-radius: 4px;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.form-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    background: var(--accent-gold);
+    border: 3px solid var(--text-primary);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(231, 159, 35, 0.5);
+    transition: all 0.3s ease;
+}
+
+.form-group input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    background: var(--accent-gold-light);
+}
+
+.form-group input[type="range"]::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    background: var(--accent-gold);
+    border: 3px solid var(--text-primary);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(231, 159, 35, 0.5);
+    transition: all 0.3s ease;
+}
+
+.form-group input[type="range"]::-moz-range-thumb:hover {
+    transform: scale(1.2);
+    background: var(--accent-gold-light);
 }
 
 .slider-value {
