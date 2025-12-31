@@ -433,10 +433,32 @@ header {
     width: 100%;
 }
 
+.tier-label-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
 .tier-label h4 {
     font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-secondary);
+    margin: 0;
+}
+
+.tier-note {
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin: 0;
+    font-style: italic;
+}
+
+.vdura-note {
+    color: var(--success-green);
+}
+
+.competitor-note {
+    color: var(--error-red);
 }
 
 .tier-specs {
