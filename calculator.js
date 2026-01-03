@@ -776,10 +776,22 @@ function startAnimation() {
 }
 
 function seedInitialCheckpoints() {
-    // Reset animation state - start completely empty
+    // Seed SSD tier with initial checkpoints based on numCheckpoints setting
+    const initialCheckpoints = workflowParams.numCheckpoints;
+
+    // Create initial checkpoints for VDURA
+    const vduraInitialCheckpoints = [];
+    for (let i = 1; i <= initialCheckpoints; i++) {
+        vduraInitialCheckpoints.push({
+            id: i,
+            status: 'active',
+            migrationProgress: 0
+        });
+    }
+
     animationState.vdura = {
-        checkpoints: [],
-        nextCheckpointId: 1,
+        checkpoints: vduraInitialCheckpoints,
+        nextCheckpointId: initialCheckpoints + 1,
         timeSinceLastCheckpoint: 0,
         ssdFull: false,
         newCheckpointId: null,
@@ -789,9 +801,20 @@ function seedInitialCheckpoints() {
         phase: 'checkpoint_write', // 'checkpoint_write' or 'model_run'
         phaseTimeElapsed: 0
     };
+
+    // Create initial checkpoints for Competitor
+    const competitorInitialCheckpoints = [];
+    for (let i = 1; i <= initialCheckpoints; i++) {
+        competitorInitialCheckpoints.push({
+            id: i,
+            status: 'active',
+            migrationProgress: 0
+        });
+    }
+
     animationState.competitor = {
-        checkpoints: [],
-        nextCheckpointId: 1,
+        checkpoints: competitorInitialCheckpoints,
+        nextCheckpointId: initialCheckpoints + 1,
         timeSinceLastCheckpoint: 0,
         ssdFull: false,
         newCheckpointId: null,
@@ -802,10 +825,7 @@ function seedInitialCheckpoints() {
         phaseTimeElapsed: 0
     };
 
-    // Start with completely empty tiers - no initial checkpoints
-    // This shows the systems filling up over time
-
-    // Render initial state
+    // Render initial state with seeded checkpoints
     renderCheckpoints();
 }
 
