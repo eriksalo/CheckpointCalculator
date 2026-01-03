@@ -73,6 +73,7 @@ function initializeEventListeners() {
     document.getElementById('checkpoint-size').addEventListener('input', calculate);
     document.getElementById('checkpoint-interval').addEventListener('input', calculate);
     document.getElementById('num-checkpoints').addEventListener('input', calculate);
+    document.getElementById('s3-transfer-rate').addEventListener('input', calculate);
 }
 
 // Main calculation function
@@ -85,6 +86,7 @@ function calculate() {
     const checkpointSize = parseFloat(document.getElementById('checkpoint-size').value);
     const checkpointInterval = parseFloat(document.getElementById('checkpoint-interval').value);
     const numCheckpoints = parseInt(document.getElementById('num-checkpoints').value);
+    const s3TransferRate = parseFloat(document.getElementById('s3-transfer-rate').value);
 
     const totalCapacityTB = totalCapacityPB * 1000;
 
@@ -112,7 +114,6 @@ function calculate() {
     const COMPETITOR_SSD_COUNT = 14; // SSDs per node
     const JBOD_BANDWIDTH = 21.5; // GB/s per JBOD
     const JBOD_CAPACITY_TB = 3240; // 108x 30TB HDDs
-    const S3_BANDWIDTH = 5; // GB/s (fixed bottleneck)
     const MIN_VPODS = 3;
     const MIN_COMPETITOR_NODES = 8;
 
@@ -196,9 +197,9 @@ function calculate() {
         }
 
         // Add S3 tier info
-        competitor.s3Bandwidth = S3_BANDWIDTH;
+        competitor.s3Bandwidth = s3TransferRate;
         competitor.s3Capacity = actualVduraHDDCapacity;
-        competitor.migrationBandwidth = S3_BANDWIDTH;
+        competitor.migrationBandwidth = s3TransferRate;
     } else {
         // Fallback if pricing data not loaded
         const competitorNodesForPerformance = Math.ceil(performanceGBs / COMPETITOR_NODE_PERFORMANCE);
@@ -211,9 +212,9 @@ function calculate() {
             ssdSize: competitorSSDSize,
             ssdBandwidth: totalCompetitorNodes * COMPETITOR_NODE_PERFORMANCE,
             ssdCapacity: actualCompetitorSSDCapacity,
-            s3Bandwidth: S3_BANDWIDTH,
+            s3Bandwidth: s3TransferRate,
             s3Capacity: actualVduraHDDCapacity,
-            migrationBandwidth: S3_BANDWIDTH
+            migrationBandwidth: s3TransferRate
         };
     }
 
