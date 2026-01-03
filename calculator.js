@@ -789,9 +789,9 @@ function startAnimation() {
     const FRAME_INTERVAL_MS = 500;
     const FRAME_INTERVAL_MINUTES = FRAME_INTERVAL_MS / 60000; // Convert to minutes
 
-    // Speed up time so checkpoint arrives every ~4.5 seconds real time
-    // Example: 60 min interval → 13.3 simulated min per 1 real sec → each 0.5s frame = 6.67 simulated min
-    const TIME_ACCELERATION = (workflowParams.checkpointInterval * 60) / 4.5;
+    // Speed up time so checkpoint arrives every ~7 seconds real time
+    // Example: 60 min interval → 8.6 simulated min per 1 real sec → each 0.5s frame = 4.3 simulated min
+    const TIME_ACCELERATION = (workflowParams.checkpointInterval * 60) / 7;
 
     animationInterval = setInterval(() => {
         animateCheckpointFlow(FRAME_INTERVAL_MINUTES * TIME_ACCELERATION);
