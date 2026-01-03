@@ -1225,7 +1225,7 @@ function updateSystemStatus(system) {
 
     // Update checkpoint counter
     if (checkpointCounterEl) {
-        const tierName = system === 'vdura' ? 'JBOD' : 'S3';
+        const tierName = system === 'vdura' ? 'HDD layer' : 'S3';
         const checkpointWord = archivedCount === 1 ? 'checkpoint' : 'checkpoints';
         const counterText = `${archivedCount} ${checkpointWord} moved to ${tierName}`;
         checkpointCounterEl.textContent = counterText;
@@ -1306,11 +1306,11 @@ function updateSystemStatus(system) {
     } else if (state.phase === 'model_run') {
         // Model run phase: Show migration status
         const migratingCheckpoint = state.checkpoints.find(cp => cp.status === 'migrating');
-        const tierName = system === 'vdura' ? 'JBOD' : 'S3';
+        const tierName = system === 'vdura' ? 'HDD layer' : 'S3';
 
         if (migratingCheckpoint) {
             const migrationProgress = migratingCheckpoint.migrationProgress.toFixed(0);
-            statusMessage = `🔄 Model running... ${tierName} layer migrating checkpoint (#${migratingCheckpoint.id}) to capacity tier (${migrationProgress}%)`;
+            statusMessage = `🔄 Model running... ${tierName} migrating checkpoint (#${migratingCheckpoint.id}) to capacity tier (${migrationProgress}%)`;
         } else {
             statusMessage = `🔄 Model running... ${archivedCount} archived in ${tierName}`;
         }
