@@ -96,13 +96,93 @@
                 <label for="checkpoint-size">Checkpoint Size (TB)</label>
                 <input type="number" id="checkpoint-size" min="10" max="500" value="100" step="10">
             </div>
+
+            <div class="form-group">
+                <label for="s3-transfer-rate">S3 Transfer rate (5GB/s Typical)</label>
+                <input type="number" id="s3-transfer-rate" min="1" max="50" value="5" step="0.5">
+            </div>
+        </div>
+
+        <!-- Workflow Status Indicators -->
+        <div class="workflow-section">
+            <div class="panel-header">
+                <h2>How it works: VDURA's flash first + fast Hybrid architecture versus All flash + S3 competitor</h2>
+            </div>
+            <div class="workflow-status-container">
+            <div class="status-indicator vdura-status" id="vdura-status">
+                <div class="status-title">VDURA Status</div>
+                <div class="status-text" id="vdura-status-text">Initializing...</div>
+                <div class="transfer-visualization">
+                    <div class="transfer-label">Checkpoint Transfer Pipeline</div>
+                    <div class="transfer-stages">
+                        <div class="transfer-stage">
+                            <div class="stage-name">SSD Write</div>
+                            <div class="stage-bar">
+                                <div class="stage-bar-fill ssd-write" id="vdura-ssd-bar" style="width: 0%"></div>
+                            </div>
+                            <div class="stage-time" id="vdura-ssd-time">1.6min</div>
+                        </div>
+                        <div style="font-size: 1.2rem; color: var(--accent-gold);">→</div>
+                        <div class="transfer-stage">
+                            <div class="stage-name">JBOD Migration</div>
+                            <div class="stage-bar-row">
+                                <div class="stage-bar">
+                                    <div class="stage-bar-fill migration" id="vdura-migration-bar" style="width: 0%"></div>
+                                </div>
+                                <div class="checkpoint-counter-large" id="vdura-checkpoint-counter">0 checkpoints moved to JBOD</div>
+                            </div>
+                            <div class="stage-time" id="vdura-migration-time">11.1min</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-label">Model run</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="vdura-progress" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="status-indicator competitor-status" id="competitor-status">
+                <div class="status-title">Competitor Status</div>
+                <div class="status-text" id="competitor-status-text">Initializing...</div>
+                <div class="transfer-visualization">
+                    <div class="transfer-label">Checkpoint Transfer Pipeline</div>
+                    <div class="transfer-stages">
+                        <div class="transfer-stage">
+                            <div class="stage-name">SSD Write</div>
+                            <div class="stage-bar">
+                                <div class="stage-bar-fill ssd-write" id="competitor-ssd-bar" style="width: 0%"></div>
+                            </div>
+                            <div class="stage-time" id="competitor-ssd-time">1.7min</div>
+                        </div>
+                        <div style="font-size: 1.2rem; color: var(--accent-purple);">→</div>
+                        <div class="transfer-stage">
+                            <div class="stage-name">S3 Migration</div>
+                            <div class="stage-bar-row">
+                                <div class="stage-bar">
+                                    <div class="stage-bar-fill migration slow" id="competitor-migration-bar" style="width: 0%"></div>
+                                </div>
+                                <div class="checkpoint-counter-large" id="competitor-checkpoint-counter">0 checkpoints moved to S3</div>
+                            </div>
+                            <div class="stage-time" id="competitor-migration-time">333.3min</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-label">Model run</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="competitor-progress" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            </div>
         </div>
 
         <!-- Visualization Section -->
         <div class="visualization-section">
             <div class="panel-header">
                 <h2>Checkpoint Workflow Visualization</h2>
-                <p class="subtitle">Width = Bandwidth, Depth = Capacity • Live Animation (1 checkpoint/sec)</p>
+                <p class="subtitle">Width = Bandwidth, Depth = Capacity • Live Animation (1 checkpoint/3sec)</p>
             </div>
 
             <div class="comparison-grid">

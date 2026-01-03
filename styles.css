@@ -344,12 +344,12 @@ header {
 
 .architecture-column {
     display: grid;
-    grid-template-rows: 45px 60px 320px 130px 60px 1fr;
+    grid-template-rows: 45px 60px 260px 130px 60px 260px;
     gap: 0.5rem;
 }
 
 .architecture-column.high-capacity {
-    grid-template-rows: 45px 60px 420px 130px 60px 1fr;
+    grid-template-rows: 45px 60px 260px 130px 60px 260px;
 }
 
 .competitor-dropdown-title {
@@ -509,10 +509,16 @@ header {
     flex-direction: column;
     gap: 0.25rem;
     align-items: center;
+    height: 100%;
 }
 
 .tier-container:nth-child(3) {
-    min-height: 120px;
+    height: 260px;
+    overflow: visible;
+}
+
+.tier-container:nth-child(6) {
+    height: 260px;
     overflow: visible;
 }
 
@@ -626,16 +632,17 @@ header {
     border-radius: 8px;
     padding: 0.5rem;
     position: relative;
-    transition: all 0.3s ease;
     margin: 0 auto; /* Center the box */
     overflow: visible;
-    display: inline-block;
-    width: auto;
+    display: block;
+    width: 577px; /* Fixed width: 477px grid + 2×0.5rem padding + borders */
+    height: 212px; /* Fixed height: 180px grid + 2×0.5rem padding + borders */
 }
 
 .checkpoint-blocks,
 .archived-blocks {
     width: 100%;
+    height: 100%;
     position: relative;
     z-index: 1;
 }
@@ -643,8 +650,11 @@ header {
 .capacity-grid {
     display: grid;
     grid-template-columns: repeat(15, 30px);
+    grid-auto-rows: 15px;
     gap: 3px;
-    width: auto;
+    width: 477px; /* Fixed width: 15 cols × 30px + 14 gaps × 3px */
+    min-width: 477px;
+    min-height: 180px; /* Fixed height to prevent resizing: 10 rows × 15px + 9 gaps × 3px */
 }
 
 .grid-cell {
@@ -668,6 +678,10 @@ header {
     background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-light) 100%);
     box-shadow: 0 2px 4px rgba(231, 159, 35, 0.3);
     color: var(--primary-bg);
+}
+
+.grid-cell.filled.new-arrival {
+    animation: arrival-flash 1s ease-out;
 }
 
 .grid-cell.filled.migrating {
@@ -850,6 +864,30 @@ header {
     }
     50% {
         opacity: 0.5;
+    }
+}
+
+@keyframes arrival-flash {
+    0% {
+        transform: scale(1.3);
+        box-shadow: 0 0 20px rgba(231, 159, 35, 0.9), 0 0 40px rgba(231, 159, 35, 0.6);
+    }
+    50% {
+        transform: scale(1.15);
+        box-shadow: 0 0 15px rgba(231, 159, 35, 0.7), 0 0 30px rgba(231, 159, 35, 0.4);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 2px 4px rgba(231, 159, 35, 0.3);
+    }
+}
+
+@keyframes flow-down {
+    0% {
+        stroke-dashoffset: 60;
+    }
+    100% {
+        stroke-dashoffset: 0;
     }
 }
 
@@ -1047,6 +1085,238 @@ header {
     color: var(--text-secondary);
     line-height: 1.5;
     font-size: 0.95rem;
+}
+
+/* Workflow Section */
+.workflow-section {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    margin-bottom: 1rem;
+}
+
+/* Workflow Status Indicators */
+.workflow-status-container {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+}
+
+.status-indicator {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 2px solid;
+    width: 550px;
+    height: 240px;
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.status-indicator.vdura-status {
+    border-color: var(--accent-gold);
+    background: linear-gradient(135deg, rgba(231, 159, 35, 0.15) 0%, transparent 100%);
+}
+
+.status-indicator.competitor-status {
+    border-color: var(--accent-purple);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, transparent 100%);
+}
+
+.status-indicator.competitor-status.competitor-blue {
+    border-color: var(--accent-blue);
+    background: linear-gradient(135deg, rgba(31, 217, 254, 0.15) 0%, transparent 100%);
+}
+
+.status-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.status-indicator.vdura-status .status-title {
+    color: var(--accent-gold);
+}
+
+.status-indicator.competitor-status .status-title {
+    color: var(--accent-purple-light);
+}
+
+.status-indicator.competitor-status.competitor-blue .status-title {
+    color: var(--accent-blue);
+}
+
+.status-text {
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-bottom: 0.5rem;
+    min-height: 45px;
+}
+
+.status-highlight {
+    font-weight: 700;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    background: rgba(231, 159, 35, 0.2);
+    color: var(--accent-gold-light);
+}
+
+.status-indicator.competitor-status .status-highlight {
+    background: rgba(168, 85, 247, 0.2);
+    color: var(--accent-purple-light);
+}
+
+.status-indicator.competitor-status.competitor-blue .status-highlight {
+    background: rgba(31, 217, 254, 0.2);
+    color: var(--accent-blue-light);
+}
+
+/* Progress Bar */
+.progress-bar-container {
+    margin-top: 0.5rem;
+}
+
+.progress-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(5, 7, 13, 0.5);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.progress-fill {
+    height: 100%;
+    transition: width 0.5s linear;
+    background: linear-gradient(90deg, var(--accent-gold) 0%, var(--accent-gold-light) 100%);
+    box-shadow: 0 0 8px rgba(231, 159, 35, 0.5);
+}
+
+.status-indicator.competitor-status .progress-fill {
+    background: linear-gradient(90deg, var(--accent-purple) 0%, var(--accent-purple-light) 100%);
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
+}
+
+.status-indicator.competitor-status.competitor-blue .progress-fill {
+    background: linear-gradient(90deg, var(--accent-blue) 0%, var(--accent-blue-light) 100%);
+    box-shadow: 0 0 8px rgba(31, 217, 254, 0.5);
+}
+
+/* Animated flow effect for migration arrows */
+.migration-arrow-vertical.active path {
+    stroke-dasharray: 6 6;
+    animation: flow-down 2s linear infinite;
+}
+
+/* Transfer Visualization Bar */
+.transfer-visualization {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(5, 7, 13, 0.5);
+    border-radius: 6px;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.transfer-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+.transfer-stages {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.transfer-stage {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.stage-name {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.stage-bar-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.stage-bar {
+    height: 24px;
+    border-radius: 4px;
+    flex: 1;
+    background: rgba(5, 7, 13, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    position: relative;
+    overflow: hidden;
+    min-width: 120px;
+}
+
+.stage-bar-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--primary-bg);
+}
+
+.stage-bar-fill.ssd-write {
+    background: linear-gradient(90deg, var(--accent-gold) 0%, var(--accent-gold-light) 100%);
+    box-shadow: 0 0 8px rgba(231, 159, 35, 0.5);
+}
+
+.stage-bar-fill.migration {
+    background: linear-gradient(90deg, var(--accent-purple) 0%, var(--accent-purple-light) 100%);
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
+}
+
+.stage-bar-fill.migration.slow {
+    background: linear-gradient(90deg, var(--error-red) 0%, #dc2626 100%);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+    animation: pulse-slow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-slow {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.checkpoint-counter-large {
+    font-size: 0.75rem;
+    color: var(--accent-gold);
+    font-weight: 600;
+    white-space: nowrap;
+    min-width: 170px;
+    text-align: right;
+}
+
+.stage-time {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
 }
 
 /* Footer */

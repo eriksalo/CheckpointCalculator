@@ -21,12 +21,22 @@ let animationState = {
     vdura: {
         checkpoints: [],
         nextCheckpointId: 1,
-        timeSinceLastCheckpoint: 0
+        timeSinceLastCheckpoint: 0,
+        ssdFull: false,
+        newCheckpointId: null, // Track newly added checkpoint for animation
+        isMigrating: false, // Track if migration is active
+        ssdWriteProgress: 0, // 0-100% progress of current SSD write
+        ssdWriteTimeElapsed: 0 // Time elapsed on current write in minutes
     },
     competitor: {
         checkpoints: [],
         nextCheckpointId: 1,
-        timeSinceLastCheckpoint: 0
+        timeSinceLastCheckpoint: 0,
+        ssdFull: false,
+        newCheckpointId: null,
+        isMigrating: false,
+        ssdWriteProgress: 0,
+        ssdWriteTimeElapsed: 0
     }
 };
 
@@ -360,6 +370,7 @@ function updateCompetitorColors(color) {
     const competitorResultCard = document.querySelector('.result-card.competitor-card');
     const competitorArchBox = document.querySelector('.arch-box.competitor-arch');
     const competitorLabels = document.querySelectorAll('.bottleneck .arrow-label-vertical');
+    const competitorStatus = document.getElementById('competitor-status');
 
     if (color === 'purple') {
         competitorColumn?.classList.remove('competitor-blue');
@@ -370,6 +381,7 @@ function updateCompetitorColors(color) {
         competitorResultCard?.classList.add('competitor-purple');
         competitorArchBox?.classList.remove('competitor-blue');
         competitorArchBox?.classList.add('competitor-purple');
+        competitorStatus?.classList.remove('competitor-blue');
     } else {
         competitorColumn?.classList.remove('competitor-purple');
         competitorColumn?.classList.add('competitor-blue');
@@ -379,6 +391,7 @@ function updateCompetitorColors(color) {
         competitorResultCard?.classList.add('competitor-blue');
         competitorArchBox?.classList.remove('competitor-purple');
         competitorArchBox?.classList.add('competitor-blue');
+        competitorStatus?.classList.add('competitor-blue');
     }
 }
 
@@ -752,9 +765,9 @@ function startAnimation() {
     const FRAME_INTERVAL_MS = 500;
     const FRAME_INTERVAL_MINUTES = FRAME_INTERVAL_MS / 60000; // Convert to minutes
 
-    // Speed up time so checkpoint arrives every ~1 second real time
-    // Example: 60 min interval → 60 simulated min per 1 real sec → each 0.5s frame = 30 simulated min
-    const TIME_ACCELERATION = workflowParams.checkpointInterval * 60;
+    // Speed up time so checkpoint arrives every ~3 seconds real time (slowed down by 3x)
+    // Example: 60 min interval → 20 simulated min per 1 real sec → each 0.5s frame = 10 simulated min
+    const TIME_ACCELERATION = (workflowParams.checkpointInterval * 60) / 3;
 
     animationInterval = setInterval(() => {
         animateCheckpointFlow(FRAME_INTERVAL_MINUTES * TIME_ACCELERATION);
@@ -766,14 +779,26 @@ function seedInitialCheckpoints() {
     animationState.vdura = {
         checkpoints: [],
         nextCheckpointId: 1,
-        timeSinceLastCheckpoint: workflowParams.checkpointInterval * 0.9, // Nearly ready for first checkpoint
-        ssdFull: false
+        timeSinceLastCheckpoint: 0,
+        ssdFull: false,
+        newCheckpointId: null,
+        isMigrating: false,
+        ssdWriteProgress: 0,
+        ssdWriteTimeElapsed: 0,
+        phase: 'checkpoint_write', // 'checkpoint_write' or 'model_run'
+        phaseTimeElapsed: 0
     };
     animationState.competitor = {
         checkpoints: [],
         nextCheckpointId: 1,
-        timeSinceLastCheckpoint: workflowParams.checkpointInterval * 0.9,
-        ssdFull: false
+        timeSinceLastCheckpoint: 0,
+        ssdFull: false,
+        newCheckpointId: null,
+        isMigrating: false,
+        ssdWriteProgress: 0,
+        ssdWriteTimeElapsed: 0,
+        phase: 'checkpoint_write',
+        phaseTimeElapsed: 0
     };
 
     // Start with completely empty tiers - no initial checkpoints
@@ -784,22 +809,15 @@ function seedInitialCheckpoints() {
 }
 
 function animateCheckpointFlow(deltaMinutes) {
-    // Update time since last checkpoint
-    animationState.vdura.timeSinceLastCheckpoint += deltaMinutes;
-    animationState.competitor.timeSinceLastCheckpoint += deltaMinutes;
+    // Update phase timers
+    animationState.vdura.phaseTimeElapsed += deltaMinutes;
+    animationState.competitor.phaseTimeElapsed += deltaMinutes;
 
-    // Add new checkpoints when interval is reached
-    if (animationState.vdura.timeSinceLastCheckpoint >= workflowParams.checkpointInterval) {
-        addCheckpoint('vdura');
-        animationState.vdura.timeSinceLastCheckpoint = 0;
-    }
+    // Handle phase transitions and updates for both systems
+    updatePhase('vdura', deltaMinutes);
+    updatePhase('competitor', deltaMinutes);
 
-    if (animationState.competitor.timeSinceLastCheckpoint >= workflowParams.checkpointInterval) {
-        addCheckpoint('competitor');
-        animationState.competitor.timeSinceLastCheckpoint = 0;
-    }
-
-    // Update checkpoint states (migrating progress)
+    // Update checkpoint states (migrating progress during model run)
     updateCheckpointStates('vdura', deltaMinutes);
     updateCheckpointStates('competitor', deltaMinutes);
 
@@ -807,51 +825,80 @@ function animateCheckpointFlow(deltaMinutes) {
     renderCheckpoints();
 }
 
-function addCheckpoint(system) {
+function updatePhase(system, deltaMinutes) {
     const state = animationState[system];
     const config = systemConfigs[system];
 
-    // Check if SSD is full
-    const activeCheckpoints = state.checkpoints.filter(cp => cp.status === 'active');
-    const migratingCheckpoints = state.checkpoints.filter(cp => cp.status === 'migrating');
-    const totalInSSD = activeCheckpoints.length + migratingCheckpoints.length;
-    const ssdCapacity = config.ssdCapacity;
-    const checkpointSize = workflowParams.checkpointSize;
-    const maxCheckpointsInSSD = Math.floor(ssdCapacity / checkpointSize);
+    // Calculate checkpoint write time (should be very fast)
+    const checkpointWriteTime = config.ssdBandwidth > 0 ?
+        (workflowParams.checkpointSize * 1000) / config.ssdBandwidth / 60 : 0; // in minutes
 
-    // If SSD is full, mark system as full and don't add checkpoint
-    if (totalInSSD >= maxCheckpointsInSSD) {
-        state.ssdFull = true;
-        return; // Can't add checkpoint - SSD is full!
-    } else {
-        state.ssdFull = false;
-    }
+    if (state.phase === 'checkpoint_write') {
+        // Checkpoint write phase: Fast SSD write
+        if (state.newCheckpointId === null) {
+            // Start a new checkpoint write
+            const activeCheckpoints = state.checkpoints.filter(cp => cp.status === 'active');
+            const migratingCheckpoints = state.checkpoints.filter(cp => cp.status === 'migrating');
+            const totalInSSD = activeCheckpoints.length + migratingCheckpoints.length;
+            const maxCheckpointsInSSD = Math.floor(config.ssdCapacity / workflowParams.checkpointSize);
 
-    state.checkpoints.push({
-        id: state.nextCheckpointId++,
-        status: 'active', // 'active', 'migrating', 'archived'
-        migrationProgress: 0 // 0-100%
-    });
+            // Check if SSD is full
+            if (totalInSSD >= maxCheckpointsInSSD) {
+                state.ssdFull = true;
+                return; // Can't write - SSD is full!
+            } else {
+                state.ssdFull = false;
+            }
 
-    // Check if we should start a migration
-    // Only one checkpoint can migrate at a time (single migration pipeline)
-    const targetSSDCheckpoints = workflowParams.numCheckpoints;
-    const hddCapacity = system === 'vdura' ? config.hddCapacity : config.s3Capacity;
+            // Add new checkpoint
+            const newId = state.nextCheckpointId++;
+            state.checkpoints.push({
+                id: newId,
+                status: 'active',
+                migrationProgress: 0
+            });
+            state.newCheckpointId = newId;
+            state.ssdWriteProgress = 0;
+            state.ssdWriteTimeElapsed = 0;
+        }
 
-    // Only migrate if there's HDD/S3 capacity available
-    if (hddCapacity > 0) {
-        // If no migration in progress and we exceed target, start migrating oldest
-        if (migratingCheckpoints.length === 0 && activeCheckpoints.length + 1 > targetSSDCheckpoints) {
-            const oldestActive = activeCheckpoints.sort((a, b) => a.id - b.id)[0];
-            if (oldestActive) {
-                oldestActive.status = 'migrating';
-                oldestActive.migrationProgress = 0;
+        // Update SSD write progress
+        if (state.ssdWriteProgress < 100) {
+            state.ssdWriteTimeElapsed += deltaMinutes;
+            state.ssdWriteProgress = Math.min(100, (state.ssdWriteTimeElapsed / checkpointWriteTime) * 100);
+        }
+
+        // When write completes, transition to model run phase
+        if (state.ssdWriteProgress >= 100) {
+            state.phase = 'model_run';
+            state.phaseTimeElapsed = 0;
+            state.newCheckpointId = null;
+
+            // Start migration immediately - don't wait for checkpoint count
+            const activeCheckpoints = state.checkpoints.filter(cp => cp.status === 'active');
+            const migratingCheckpoints = state.checkpoints.filter(cp => cp.status === 'migrating');
+            const hddCapacity = system === 'vdura' ? config.hddCapacity : config.s3Capacity;
+
+            // Start migrating oldest checkpoint immediately if we have any and no migration in progress
+            if (hddCapacity > 0 && migratingCheckpoints.length === 0 && activeCheckpoints.length > 0) {
+                const oldestActive = activeCheckpoints.sort((a, b) => a.id - b.id)[0];
+                if (oldestActive) {
+                    oldestActive.status = 'migrating';
+                    oldestActive.migrationProgress = 0;
+                    state.isMigrating = true;
+                }
             }
         }
+    } else if (state.phase === 'model_run') {
+        // Model run phase: Migration happening in background
+        // Transition back to checkpoint write after checkpoint interval
+        if (state.phaseTimeElapsed >= workflowParams.checkpointInterval) {
+            state.phase = 'checkpoint_write';
+            state.phaseTimeElapsed = 0;
+        }
     }
-
-    // If system can't keep up with migration speed, checkpoints pile up in SSD
 }
+
 
 function updateCheckpointStates(system, deltaMinutes) {
     const state = animationState[system];
@@ -860,9 +907,11 @@ function updateCheckpointStates(system, deltaMinutes) {
         workflowParams.competitorMigrationTime;
 
     let migrationCompleted = false;
+    let hasMigratingCheckpoint = false;
 
     state.checkpoints.forEach(checkpoint => {
         if (checkpoint.status === 'migrating') {
+            hasMigratingCheckpoint = true;
             // Update migration progress
             const progressPerMinute = (100 / migrationTime);
             checkpoint.migrationProgress += progressPerMinute * deltaMinutes;
@@ -875,12 +924,15 @@ function updateCheckpointStates(system, deltaMinutes) {
         }
     });
 
-    // If a migration just completed, start the next one if available
+    // Update migration status
+    state.isMigrating = hasMigratingCheckpoint;
+
+    // If a migration just completed, immediately start the next one if available
     if (migrationCompleted) {
         const activeCheckpoints = state.checkpoints.filter(cp => cp.status === 'active');
-        const targetSSDCheckpoints = workflowParams.numCheckpoints;
 
-        if (activeCheckpoints.length > targetSSDCheckpoints) {
+        // Start next migration immediately if there are any active checkpoints
+        if (activeCheckpoints.length > 0) {
             const oldestActive = activeCheckpoints.sort((a, b) => a.id - b.id)[0];
             if (oldestActive) {
                 oldestActive.status = 'migrating';
@@ -942,6 +994,7 @@ function renderCheckpoints() {
 
     renderSystemCheckpoints('vdura');
     renderSystemCheckpoints('competitor');
+    updateStatusIndicators();
 }
 
 function renderSystemCheckpoints(system) {
@@ -983,8 +1036,10 @@ function renderSystemCheckpoints(system) {
     const ssdCapacity = config.ssdCapacity;
     const hddCapacity = system === 'vdura' ? config.hddCapacity : config.s3Capacity;
 
-    const ssdCells = Math.floor(ssdCapacity / checkpointSize);
-    const hddCells = Math.floor(hddCapacity / checkpointSize);
+    // Fixed grid size: 15 columns × 10 rows = 150 cells
+    const FIXED_GRID_CELLS = 150;
+    const ssdCells = FIXED_GRID_CELLS;
+    const hddCells = FIXED_GRID_CELLS;
 
     // Sort checkpoints by ID for display
     const activeCheckpoints = state.checkpoints.filter(cp => cp.status === 'active').sort((a, b) => b.id - a.id);
@@ -997,13 +1052,17 @@ function renderSystemCheckpoints(system) {
     // Combine active and migrating for SSD display
     const ssdCheckpoints = [...migratingCheckpoints, ...activeCheckpoints];
 
-    // Build SSD grid with checkpoint IDs
+    // Build SSD grid with checkpoint IDs - always render fixed number of cells
     let ssdHTML = '<div class="capacity-grid">';
     for (let i = 0; i < ssdCells; i++) {
         if (i < ssdFilled) {
             const checkpoint = ssdCheckpoints[i];
             const isMigrating = i < migratingCheckpoints.length;
-            const className = isMigrating ? 'grid-cell filled migrating' : 'grid-cell filled';
+            const isNewArrival = checkpoint.id === state.newCheckpointId;
+            let className = isMigrating ? 'grid-cell filled migrating' : 'grid-cell filled';
+            if (isNewArrival && !isMigrating) {
+                className += ' new-arrival';
+            }
             ssdHTML += `<div class="${className}">${checkpoint.id}</div>`;
         } else {
             ssdHTML += `<div class="grid-cell empty"></div>`;
@@ -1011,7 +1070,7 @@ function renderSystemCheckpoints(system) {
     }
     ssdHTML += '</div>';
 
-    // Build HDD/S3 grid with checkpoint IDs
+    // Build HDD/S3 grid with checkpoint IDs - always render fixed number of cells
     let hddHTML = '<div class="capacity-grid">';
     for (let i = 0; i < hddCells; i++) {
         if (i < hddFilled) {
@@ -1030,4 +1089,142 @@ function renderSystemCheckpoints(system) {
     if (archivedContainer.innerHTML !== hddHTML) {
         archivedContainer.innerHTML = hddHTML;
     }
+
+    // Clear the new checkpoint flag after rendering (it will show for 1 frame)
+    setTimeout(() => {
+        state.newCheckpointId = null;
+    }, 1000);
+}
+
+// Update workflow status indicators
+function updateStatusIndicators() {
+    updateSystemStatus('vdura');
+    updateSystemStatus('competitor');
+}
+
+function updateSystemStatus(system) {
+    const state = animationState[system];
+    const statusTextEl = document.getElementById(`${system}-status-text`);
+    const progressEl = document.getElementById(`${system}-progress`);
+    const ssdBarEl = document.getElementById(`${system}-ssd-bar`);
+    const migrationBarEl = document.getElementById(`${system}-migration-bar`);
+    const ssdTimeEl = document.getElementById(`${system}-ssd-time`);
+    const migrationTimeEl = document.getElementById(`${system}-migration-time`);
+    const checkpointCounterEl = document.getElementById(`${system}-checkpoint-counter`);
+
+    if (!statusTextEl || !progressEl) return;
+
+    // Calculate progress percentage based on phase
+    let progressPercent = 0;
+    if (state.phase === 'checkpoint_write') {
+        // During write phase, show SSD write progress
+        progressPercent = state.ssdWriteProgress;
+    } else if (state.phase === 'model_run') {
+        // During model run, show progress toward next checkpoint
+        progressPercent = (state.phaseTimeElapsed / workflowParams.checkpointInterval) * 100;
+    }
+    progressEl.style.width = `${Math.min(100, progressPercent)}%`;
+
+    // Get counts
+    const activeCount = state.checkpoints.filter(cp => cp.status === 'active').length;
+    const migratingCount = state.checkpoints.filter(cp => cp.status === 'migrating').length;
+    const archivedCount = state.checkpoints.filter(cp => cp.status === 'archived').length;
+
+    // Update checkpoint counter
+    if (checkpointCounterEl) {
+        const tierName = system === 'vdura' ? 'JBOD' : 'S3';
+        const checkpointWord = archivedCount === 1 ? 'checkpoint' : 'checkpoints';
+        const counterText = `${archivedCount} ${checkpointWord} moved to ${tierName}`;
+        checkpointCounterEl.textContent = counterText;
+    }
+
+    // Get timing info
+    const migrationTime = system === 'vdura' ?
+        workflowParams.vduraMigrationTime :
+        workflowParams.competitorMigrationTime;
+
+    // Calculate checkpoint write time (assuming 1000 GB/s write speed for SSD tier)
+    const config = systemConfigs[system];
+    const checkpointWriteTime = config.ssdBandwidth > 0 ?
+        (workflowParams.checkpointSize * 1000) / config.ssdBandwidth / 60 : 0; // in minutes
+
+    // Update transfer visualization bars
+    if (ssdTimeEl && migrationTimeEl) {
+        const writeTimeSec = checkpointWriteTime * 60;
+        ssdTimeEl.textContent = writeTimeSec < 60 ? writeTimeSec.toFixed(1) + 's' : checkpointWriteTime.toFixed(1) + 'min';
+        migrationTimeEl.textContent = migrationTime.toFixed(1) + 'min';
+    }
+
+    // Update bar progress based on phase
+    if (ssdBarEl && migrationBarEl) {
+        // Update migration bar based on checkpoint migration progress (show always)
+        const migratingCheckpoint = state.checkpoints.find(cp => cp.status === 'migrating');
+        if (migratingCheckpoint) {
+            const migrationProgress = Math.min(100, migratingCheckpoint.migrationProgress);
+            migrationBarEl.style.width = migrationProgress + '%';
+            migrationBarEl.textContent = migrationProgress >= 10 ? migrationProgress.toFixed(0) + '%' : '';
+        } else {
+            migrationBarEl.style.width = '0%';
+            migrationBarEl.textContent = '';
+        }
+
+        if (state.phase === 'checkpoint_write') {
+            // Checkpoint write phase: Show fast SSD write bar filling
+            const writeProgress = Math.min(100, state.ssdWriteProgress);
+            ssdBarEl.style.width = writeProgress + '%';
+            ssdBarEl.textContent = writeProgress >= 10 ? writeProgress.toFixed(0) + '%' : '';
+        } else if (state.phase === 'model_run') {
+            // Model run phase: SSD write bar is empty (write complete)
+            ssdBarEl.style.width = '0%';
+            ssdBarEl.textContent = '';
+        }
+    }
+
+    // Build status message based on phase
+    let statusMessage = '';
+
+    if (state.ssdFull) {
+        statusMessage = '⚠️ <span class="status-highlight">SSD FULL</span> - Cannot accept new checkpoints!';
+    } else if (state.phase === 'checkpoint_write') {
+        // Checkpoint write phase: Show high-speed SSD write
+        const bandwidth = config.ssdBandwidth;
+        statusMessage = `⚡ High-speed checkpoint writing - direct to SSD @ <span class="status-highlight">${bandwidth.toFixed(0)} GB/s</span>`;
+    } else if (state.phase === 'model_run') {
+        // Model run phase: Show migration status
+        const migratingCheckpoint = state.checkpoints.find(cp => cp.status === 'migrating');
+        const tierName = system === 'vdura' ? 'JBOD' : 'S3';
+
+        if (migratingCheckpoint) {
+            const migrationProgress = migratingCheckpoint.migrationProgress.toFixed(0);
+            statusMessage = `🔄 Model running... ${tierName} layer migrating older checkpoint (#${migratingCheckpoint.id}) to capacity tier (${migrationProgress}%)`;
+        } else {
+            statusMessage = `🔄 Model running... ${activeCount} checkpoint${activeCount !== 1 ? 's' : ''} in SSD`;
+            if (archivedCount > 0) {
+                statusMessage += ` • ${archivedCount} archived in ${tierName}`;
+            }
+        }
+    }
+
+    statusTextEl.innerHTML = statusMessage;
+
+    // Update migration arrow animation
+    updateMigrationArrowAnimation(system);
+}
+
+function updateMigrationArrowAnimation(system) {
+    const state = animationState[system];
+    const containerEl = document.getElementById(`${system}-migration-container`);
+
+    if (!containerEl) return;
+
+    const arrows = containerEl.querySelectorAll('.migration-arrow-vertical');
+
+    // Show migration animation only during model_run phase when actually migrating
+    arrows.forEach(arrow => {
+        if (state.phase === 'model_run' && state.isMigrating) {
+            arrow.classList.add('active');
+        } else {
+            arrow.classList.remove('active');
+        }
+    });
 }
