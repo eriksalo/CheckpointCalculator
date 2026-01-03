@@ -776,22 +776,11 @@ function startAnimation() {
 }
 
 function seedInitialCheckpoints() {
-    // Seed SSD tier with initial checkpoints based on numCheckpoints setting
-    const initialCheckpoints = workflowParams.numCheckpoints;
-
-    // Create initial checkpoints for VDURA
-    const vduraInitialCheckpoints = [];
-    for (let i = 1; i <= initialCheckpoints; i++) {
-        vduraInitialCheckpoints.push({
-            id: i,
-            status: 'active',
-            migrationProgress: 0
-        });
-    }
-
+    // Start with completely empty SSD tiers
+    // Checkpoints will accumulate until reaching numCheckpoints before migration starts
     animationState.vdura = {
-        checkpoints: vduraInitialCheckpoints,
-        nextCheckpointId: initialCheckpoints + 1,
+        checkpoints: [],
+        nextCheckpointId: 1,
         timeSinceLastCheckpoint: 0,
         ssdFull: false,
         newCheckpointId: null,
@@ -802,19 +791,9 @@ function seedInitialCheckpoints() {
         phaseTimeElapsed: 0
     };
 
-    // Create initial checkpoints for Competitor
-    const competitorInitialCheckpoints = [];
-    for (let i = 1; i <= initialCheckpoints; i++) {
-        competitorInitialCheckpoints.push({
-            id: i,
-            status: 'active',
-            migrationProgress: 0
-        });
-    }
-
     animationState.competitor = {
-        checkpoints: competitorInitialCheckpoints,
-        nextCheckpointId: initialCheckpoints + 1,
+        checkpoints: [],
+        nextCheckpointId: 1,
         timeSinceLastCheckpoint: 0,
         ssdFull: false,
         newCheckpointId: null,
@@ -825,7 +804,7 @@ function seedInitialCheckpoints() {
         phaseTimeElapsed: 0
     };
 
-    // Render initial state with seeded checkpoints
+    // Render initial empty state
     renderCheckpoints();
 }
 
@@ -895,13 +874,14 @@ function updatePhase(system, deltaMinutes) {
             state.phaseTimeElapsed = 0;
             state.newCheckpointId = null;
 
-            // Start migration immediately - don't wait for checkpoint count
+            // Start migration only when we exceed the target number of checkpoints
             const activeCheckpoints = state.checkpoints.filter(cp => cp.status === 'active');
             const migratingCheckpoints = state.checkpoints.filter(cp => cp.status === 'migrating');
             const hddCapacity = system === 'vdura' ? config.hddCapacity : config.s3Capacity;
+            const targetCheckpoints = workflowParams.numCheckpoints;
 
-            // Start migrating oldest checkpoint immediately if we have any and no migration in progress
-            if (hddCapacity > 0 && migratingCheckpoints.length === 0 && activeCheckpoints.length > 0) {
+            // Only start migrating if we have MORE than target checkpoints and no migration in progress
+            if (hddCapacity > 0 && migratingCheckpoints.length === 0 && activeCheckpoints.length > targetCheckpoints) {
                 const oldestActive = activeCheckpoints.sort((a, b) => a.id - b.id)[0];
                 if (oldestActive) {
                     oldestActive.status = 'migrating';
@@ -948,12 +928,13 @@ function updateCheckpointStates(system, deltaMinutes) {
     // Update migration status
     state.isMigrating = hasMigratingCheckpoint;
 
-    // If a migration just completed, immediately start the next one if available
+    // If a migration just completed, start the next one if we still exceed target
     if (migrationCompleted) {
         const activeCheckpoints = state.checkpoints.filter(cp => cp.status === 'active');
+        const targetCheckpoints = workflowParams.numCheckpoints;
 
-        // Start next migration immediately if there are any active checkpoints
-        if (activeCheckpoints.length > 0) {
+        // Only start next migration if we still have MORE than target checkpoints
+        if (activeCheckpoints.length > targetCheckpoints) {
             const oldestActive = activeCheckpoints.sort((a, b) => a.id - b.id)[0];
             if (oldestActive) {
                 oldestActive.status = 'migrating';
