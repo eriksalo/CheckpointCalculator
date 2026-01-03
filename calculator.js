@@ -51,7 +51,8 @@ let statusAnimationState = {
         ssdWriteProgress: 0,
         ssdWriteTimeElapsed: 0,
         archivedCount: 0,
-        migrationCompletedAt: null
+        migrationCompletedAt: null,
+        writeCompletedAt: null
     },
     competitor: {
         checkpoints: [],
@@ -61,7 +62,8 @@ let statusAnimationState = {
         ssdWriteProgress: 0,
         ssdWriteTimeElapsed: 0,
         archivedCount: 0,
-        migrationCompletedAt: null
+        migrationCompletedAt: null,
+        writeCompletedAt: null
     }
 };
 
@@ -838,7 +840,8 @@ function seedInitialCheckpoints() {
         ssdWriteProgress: 0,
         ssdWriteTimeElapsed: 0,
         archivedCount: 0,
-        migrationCompletedAt: null
+        migrationCompletedAt: null,
+        writeCompletedAt: null
     };
 
     statusAnimationState.competitor = {
@@ -849,7 +852,8 @@ function seedInitialCheckpoints() {
         ssdWriteProgress: 0,
         ssdWriteTimeElapsed: 0,
         archivedCount: 0,
-        migrationCompletedAt: null
+        migrationCompletedAt: null,
+        writeCompletedAt: null
     };
 
     // Render initial empty state
@@ -1026,6 +1030,7 @@ function updateStatusPhase(system, deltaMinutes) {
             state.phaseTimeElapsed = 0;
             state.ssdWriteProgress = 0;
             state.ssdWriteTimeElapsed = 0;
+            state.writeCompletedAt = Date.now(); // Record completion time
 
             // Add checkpoint and immediately start migrating it
             const newCheckpoint = {
@@ -1280,7 +1285,11 @@ function updateSystemStatus(system) {
     // Show/hide lightning bolts based on phase
     const lightningEl = document.getElementById(`${system}-lightning`);
     if (lightningEl) {
-        if (state.phase === 'checkpoint_write' && state.ssdWriteProgress > 0) {
+        // Show during checkpoint_write phase OR for 2 seconds after write completes
+        const timeSinceWriteComplete = state.writeCompletedAt ? Date.now() - state.writeCompletedAt : Infinity;
+        const showBolts = state.phase === 'checkpoint_write' || timeSinceWriteComplete < 2000;
+
+        if (showBolts) {
             lightningEl.classList.add('active');
         } else {
             lightningEl.classList.remove('active');
