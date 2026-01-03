@@ -17,6 +17,7 @@ let systemConfigs = {
     competitor: {}
 };
 
+// Animation state for the grid visualization (waits for target checkpoints before migrating)
 let animationState = {
     vdura: {
         checkpoints: [],
@@ -37,6 +38,28 @@ let animationState = {
         isMigrating: false,
         ssdWriteProgress: 0,
         ssdWriteTimeElapsed: 0
+    }
+};
+
+// Separate animation state for status indicators (starts migrating immediately)
+let statusAnimationState = {
+    vdura: {
+        checkpoints: [],
+        nextCheckpointId: 1,
+        phase: 'checkpoint_write',
+        phaseTimeElapsed: 0,
+        ssdWriteProgress: 0,
+        ssdWriteTimeElapsed: 0,
+        archivedCount: 0
+    },
+    competitor: {
+        checkpoints: [],
+        nextCheckpointId: 1,
+        phase: 'checkpoint_write',
+        phaseTimeElapsed: 0,
+        ssdWriteProgress: 0,
+        ssdWriteTimeElapsed: 0,
+        archivedCount: 0
     }
 };
 
@@ -776,7 +799,7 @@ function startAnimation() {
 }
 
 function seedInitialCheckpoints() {
-    // Start with completely empty SSD tiers
+    // Start with completely empty SSD tiers for grid visualization
     // Checkpoints will accumulate until reaching numCheckpoints before migration starts
     animationState.vdura = {
         checkpoints: [],
@@ -804,24 +827,49 @@ function seedInitialCheckpoints() {
         phaseTimeElapsed: 0
     };
 
+    // Initialize status animation state (starts migrating immediately)
+    statusAnimationState.vdura = {
+        checkpoints: [],
+        nextCheckpointId: 1,
+        phase: 'checkpoint_write',
+        phaseTimeElapsed: 0,
+        ssdWriteProgress: 0,
+        ssdWriteTimeElapsed: 0,
+        archivedCount: 0
+    };
+
+    statusAnimationState.competitor = {
+        checkpoints: [],
+        nextCheckpointId: 1,
+        phase: 'checkpoint_write',
+        phaseTimeElapsed: 0,
+        ssdWriteProgress: 0,
+        ssdWriteTimeElapsed: 0,
+        archivedCount: 0
+    };
+
     // Render initial empty state
     renderCheckpoints();
 }
 
 function animateCheckpointFlow(deltaMinutes) {
-    // Update phase timers
+    // Update phase timers for grid visualization
     animationState.vdura.phaseTimeElapsed += deltaMinutes;
     animationState.competitor.phaseTimeElapsed += deltaMinutes;
 
-    // Handle phase transitions and updates for both systems
+    // Handle phase transitions and updates for both systems (grid visualization)
     updatePhase('vdura', deltaMinutes);
     updatePhase('competitor', deltaMinutes);
 
-    // Update checkpoint states (migrating progress during model run)
+    // Update checkpoint states (migrating progress during model run) for grid
     updateCheckpointStates('vdura', deltaMinutes);
     updateCheckpointStates('competitor', deltaMinutes);
 
-    // Render the visualization
+    // Update status animation (always shows migration)
+    updateStatusPhase('vdura', deltaMinutes);
+    updateStatusPhase('competitor', deltaMinutes);
+
+    // Render the grid visualization
     renderCheckpoints();
 }
 
@@ -950,6 +998,65 @@ function updateCheckpointStates(system, deltaMinutes) {
     const archivedCheckpoints = state.checkpoints.filter(cp => cp.status === 'archived');
     const hddCapacity = system === 'vdura' ? config.hddCapacity : config.s3Capacity;
     const maxArchivedCheckpoints = Math.floor(hddCapacity / workflowParams.checkpointSize);
+}
+
+// Update status animation phase (for "How it works" section - always shows migration)
+function updateStatusPhase(system, deltaMinutes) {
+    const state = statusAnimationState[system];
+    const config = systemConfigs[system];
+
+    // Calculate checkpoint write time
+    const checkpointWriteTime = config.ssdBandwidth > 0 ?
+        (workflowParams.checkpointSize * 1000) / config.ssdBandwidth / 60 : 0;
+
+    state.phaseTimeElapsed += deltaMinutes;
+
+    if (state.phase === 'checkpoint_write') {
+        // Update SSD write progress
+        state.ssdWriteTimeElapsed += deltaMinutes;
+        state.ssdWriteProgress = Math.min(100, (state.ssdWriteTimeElapsed / checkpointWriteTime) * 100);
+
+        // When write completes, transition to model run and start migration immediately
+        if (state.ssdWriteProgress >= 100) {
+            state.phase = 'model_run';
+            state.phaseTimeElapsed = 0;
+            state.ssdWriteProgress = 0;
+            state.ssdWriteTimeElapsed = 0;
+
+            // Add checkpoint and immediately start migrating it
+            const newCheckpoint = {
+                id: state.nextCheckpointId++,
+                status: 'migrating',
+                migrationProgress: 0
+            };
+            state.checkpoints.push(newCheckpoint);
+        }
+    } else if (state.phase === 'model_run') {
+        // Update migration progress
+        const migrationTime = system === 'vdura' ?
+            workflowParams.vduraMigrationTime :
+            workflowParams.competitorMigrationTime;
+
+        const migratingCheckpoint = state.checkpoints.find(cp => cp.status === 'migrating');
+        if (migratingCheckpoint) {
+            const progressPerMinute = (100 / migrationTime);
+            migratingCheckpoint.migrationProgress += progressPerMinute * deltaMinutes;
+
+            if (migratingCheckpoint.migrationProgress >= 100) {
+                migratingCheckpoint.status = 'archived';
+                migratingCheckpoint.migrationProgress = 100;
+                state.archivedCount++;
+            }
+        }
+
+        // Transition back to checkpoint write after checkpoint interval
+        if (state.phaseTimeElapsed >= workflowParams.checkpointInterval) {
+            state.phase = 'checkpoint_write';
+            state.phaseTimeElapsed = 0;
+            state.ssdWriteProgress = 0;
+            state.ssdWriteTimeElapsed = 0;
+        }
+    }
 
     // Check if we should stop the simulation
     let shouldStop = false;
@@ -1105,7 +1212,7 @@ function updateStatusIndicators() {
 }
 
 function updateSystemStatus(system) {
-    const state = animationState[system];
+    const state = statusAnimationState[system]; // Use status animation state instead of grid animation state
     const statusTextEl = document.getElementById(`${system}-status-text`);
     const progressEl = document.getElementById(`${system}-progress`);
     const ssdBarEl = document.getElementById(`${system}-ssd-bar`);
@@ -1127,10 +1234,10 @@ function updateSystemStatus(system) {
     }
     progressEl.style.width = `${Math.min(100, progressPercent)}%`;
 
-    // Get counts
+    // Get counts from status animation state
     const activeCount = state.checkpoints.filter(cp => cp.status === 'active').length;
     const migratingCount = state.checkpoints.filter(cp => cp.status === 'migrating').length;
-    const archivedCount = state.checkpoints.filter(cp => cp.status === 'archived').length;
+    const archivedCount = state.archivedCount; // Use counter instead of filtering
 
     // Update checkpoint counter
     if (checkpointCounterEl) {
@@ -1185,9 +1292,7 @@ function updateSystemStatus(system) {
     // Build status message based on phase
     let statusMessage = '';
 
-    if (state.ssdFull) {
-        statusMessage = '⚠️ <span class="status-highlight">SSD FULL</span> - Cannot accept new checkpoints!';
-    } else if (state.phase === 'checkpoint_write') {
+    if (state.phase === 'checkpoint_write') {
         // Checkpoint write phase: Show high-speed SSD write
         const bandwidth = config.ssdBandwidth;
         statusMessage = `⚡ High-speed checkpoint writing - direct to SSD @ <span class="status-highlight">${bandwidth.toFixed(0)} GB/s</span>`;
@@ -1198,12 +1303,9 @@ function updateSystemStatus(system) {
 
         if (migratingCheckpoint) {
             const migrationProgress = migratingCheckpoint.migrationProgress.toFixed(0);
-            statusMessage = `🔄 Model running... ${tierName} layer migrating older checkpoint (#${migratingCheckpoint.id}) to capacity tier (${migrationProgress}%)`;
+            statusMessage = `🔄 Model running... ${tierName} layer migrating checkpoint (#${migratingCheckpoint.id}) to capacity tier (${migrationProgress}%)`;
         } else {
-            statusMessage = `🔄 Model running... ${activeCount} checkpoint${activeCount !== 1 ? 's' : ''} in SSD`;
-            if (archivedCount > 0) {
-                statusMessage += ` • ${archivedCount} archived in ${tierName}`;
-            }
+            statusMessage = `🔄 Model running... ${archivedCount} archived in ${tierName}`;
         }
     }
 
