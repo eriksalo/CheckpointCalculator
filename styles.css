@@ -67,6 +67,30 @@ header {
     margin: 0;
 }
 
+.header-link {
+    position: absolute;
+    right: 0;
+    top: 0.5rem;
+}
+
+.technical-bulletin-link {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-light) 100%);
+    color: var(--primary-bg);
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(231, 159, 35, 0.2);
+}
+
+.technical-bulletin-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(231, 159, 35, 0.3);
+}
+
 .header-content {
     text-align: center;
 }
