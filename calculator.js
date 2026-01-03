@@ -50,7 +50,8 @@ let statusAnimationState = {
         phaseTimeElapsed: 0,
         ssdWriteProgress: 0,
         ssdWriteTimeElapsed: 0,
-        archivedCount: 0
+        archivedCount: 0,
+        migrationCompletedAt: null
     },
     competitor: {
         checkpoints: [],
@@ -59,7 +60,8 @@ let statusAnimationState = {
         phaseTimeElapsed: 0,
         ssdWriteProgress: 0,
         ssdWriteTimeElapsed: 0,
-        archivedCount: 0
+        archivedCount: 0,
+        migrationCompletedAt: null
     }
 };
 
@@ -835,7 +837,8 @@ function seedInitialCheckpoints() {
         phaseTimeElapsed: 0,
         ssdWriteProgress: 0,
         ssdWriteTimeElapsed: 0,
-        archivedCount: 0
+        archivedCount: 0,
+        migrationCompletedAt: null
     };
 
     statusAnimationState.competitor = {
@@ -845,7 +848,8 @@ function seedInitialCheckpoints() {
         phaseTimeElapsed: 0,
         ssdWriteProgress: 0,
         ssdWriteTimeElapsed: 0,
-        archivedCount: 0
+        archivedCount: 0,
+        migrationCompletedAt: null
     };
 
     // Render initial empty state
@@ -1046,6 +1050,7 @@ function updateStatusPhase(system, deltaMinutes) {
                 migratingCheckpoint.status = 'archived';
                 migratingCheckpoint.migrationProgress = 100;
                 state.archivedCount++;
+                state.migrationCompletedAt = Date.now(); // Record completion time
             }
         }
 
@@ -1247,8 +1252,17 @@ function updateSystemStatus(system) {
             migrationBarEl.style.width = migrationProgress + '%';
             migrationBarEl.textContent = migrationProgress >= 10 ? migrationProgress.toFixed(0) + '%' : '';
         } else {
-            migrationBarEl.style.width = '0%';
-            migrationBarEl.textContent = '';
+            // Check if migration just completed (within last 1 second)
+            const timeSinceCompletion = state.migrationCompletedAt ? Date.now() - state.migrationCompletedAt : Infinity;
+            if (timeSinceCompletion < 1000) {
+                // Keep bar at 100% for 1 second after completion
+                migrationBarEl.style.width = '100%';
+                migrationBarEl.textContent = '100%';
+            } else {
+                // Hide bar after 1 second delay
+                migrationBarEl.style.width = '0%';
+                migrationBarEl.textContent = '';
+            }
         }
 
         if (state.phase === 'checkpoint_write') {
