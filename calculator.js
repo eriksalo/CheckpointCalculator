@@ -1057,33 +1057,7 @@ function updateStatusPhase(system, deltaMinutes) {
             state.ssdWriteTimeElapsed = 0;
         }
     }
-
-    // Check if we should stop the simulation
-    let shouldStop = false;
-
-    // Case 1: 100% SSD configuration - stop when any SSD tier is full
-    if (systemConfigs.vdura.hddCapacity === 0) {
-        if (animationState.vdura.ssdFull || animationState.competitor.ssdFull) {
-            shouldStop = true;
-            console.log('100% SSD: SSD tier full - stopping simulation');
-        }
-    }
-    // Case 2: Hybrid configuration - stop when VDURA JBOD is full
-    else if (hddCapacity > 0 && archivedCheckpoints.length >= maxArchivedCheckpoints) {
-        const vduraArchived = animationState.vdura.checkpoints.filter(cp => cp.status === 'archived').length;
-        const vduraMaxArchived = Math.floor(systemConfigs.vdura.hddCapacity / workflowParams.checkpointSize);
-
-        if (vduraArchived >= vduraMaxArchived) {
-            shouldStop = true;
-            console.log('VDURA JBOD full - stopping simulation');
-        }
-    }
-
-    // Stop the animation if conditions are met
-    if (shouldStop && animationInterval) {
-        clearInterval(animationInterval);
-        animationInterval = null;
-    }
+    // Status animation runs continuously - no stop conditions
 }
 
 function renderCheckpoints() {
