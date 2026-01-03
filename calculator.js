@@ -1263,6 +1263,16 @@ function updateSystemStatus(system) {
         }
     }
 
+    // Show/hide lightning bolts based on phase
+    const lightningEl = document.getElementById(`${system}-lightning`);
+    if (lightningEl) {
+        if (state.phase === 'checkpoint_write' && state.ssdWriteProgress > 0) {
+            lightningEl.classList.add('active');
+        } else {
+            lightningEl.classList.remove('active');
+        }
+    }
+
     // Build status message based on phase
     let statusMessage = '';
 
