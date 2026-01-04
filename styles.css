@@ -368,12 +368,12 @@ header {
 
 .architecture-column {
     display: grid;
-    grid-template-rows: 45px 60px 260px 130px 60px 260px;
+    grid-template-rows: 45px 60px auto 130px 60px auto;
     gap: 0.5rem;
 }
 
 .architecture-column.high-capacity {
-    grid-template-rows: 45px 60px 260px 130px 60px 260px;
+    grid-template-rows: 45px 60px auto 130px 60px auto;
 }
 
 .competitor-dropdown-title {
@@ -533,17 +533,7 @@ header {
     flex-direction: column;
     gap: 0.25rem;
     align-items: center;
-    height: 100%;
-}
-
-.tier-container:nth-child(3) {
-    height: 260px;
-    overflow: visible;
-}
-
-.tier-container:nth-child(6) {
-    height: 260px;
-    overflow: visible;
+    /* Height auto-expands to fit storage box content */
 }
 
 .tier-label {
@@ -657,16 +647,16 @@ header {
     padding: 0.5rem;
     position: relative;
     margin: 0 auto; /* Center the box */
-    overflow: visible;
     display: block;
-    width: 577px; /* Fixed width: 477px grid + 2×0.5rem padding + borders */
-    height: 212px; /* Fixed height: 180px grid + 2×0.5rem padding + borders */
+    width: 515px; /* Width to contain 492px grid + 16px padding + 4px border + extra space */
+    /* Height auto-expands to fit grid content */
+    min-height: 50px; /* Minimum height to ensure box is visible */
 }
 
 .checkpoint-blocks,
 .archived-blocks {
     width: 100%;
-    height: 100%;
+    /* Height auto-fits to grid content */
     position: relative;
     z-index: 1;
 }
@@ -676,9 +666,8 @@ header {
     grid-template-columns: repeat(15, 30px);
     grid-auto-rows: 15px;
     gap: 3px;
-    width: 477px; /* Fixed width: 15 cols × 30px + 14 gaps × 3px */
-    min-width: 477px;
-    min-height: 180px; /* Fixed height to prevent resizing: 10 rows × 15px + 9 gaps × 3px */
+    /* Width auto-calculated: 15 cols × 30px + 14 gaps × 3px = 492px */
+    /* Height auto-calculated by grid rows */
 }
 
 .grid-cell {
@@ -786,12 +775,11 @@ header {
     padding: 0.5rem 0;
     display: flex;
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    gap: 0.25rem;
-    flex-wrap: nowrap;
+    gap: 0.5rem;
+    flex-wrap: wrap;
     min-height: 100px;
-    max-height: 100px;
 }
 
 .migration-arrow-vertical {
@@ -1133,7 +1121,7 @@ header {
     border-radius: 8px;
     border: 2px solid;
     width: 550px;
-    height: 240px;
+    height: 245px;
     font-size: 0.85rem;
     display: flex;
     flex-direction: column;
@@ -1157,7 +1145,7 @@ header {
 .status-title {
     font-weight: 700;
     font-size: 0.9rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
 }
 
 .status-indicator.vdura-status .status-title {
@@ -1174,9 +1162,9 @@ header {
 
 .status-text {
     color: var(--text-secondary);
-    line-height: 1.4;
-    margin-bottom: 0.5rem;
-    min-height: 45px;
+    line-height: 1.3;
+    margin-bottom: 0.25rem;
+    min-height: 30px;
 }
 
 .status-highlight {
@@ -1200,6 +1188,7 @@ header {
 /* Progress Bar */
 .progress-bar-container {
     margin-top: 0.5rem;
+    margin-bottom: 0.25rem;
 }
 
 .progress-label {
@@ -1240,9 +1229,75 @@ header {
     animation: flow-down 2s linear infinite;
 }
 
+/* Horizontal migration arrows */
+.migration-arrow-horizontal {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.arrow-svg-horizontal {
+    width: 80px;
+    height: 40px;
+}
+
+/* Compact arrows when there are many JBODs */
+.many-arrows .migration-arrow-horizontal {
+    gap: 0.3rem;
+}
+
+.many-arrows .arrow-svg-horizontal {
+    width: 70px;
+    height: 28px;
+}
+
+.many-arrows .arrow-label-horizontal {
+    font-size: 0.55rem;
+}
+
+/* Even more compact for very many JBODs */
+.very-many-arrows .migration-arrow-horizontal {
+    gap: 0.2rem;
+}
+
+.very-many-arrows .arrow-svg-horizontal {
+    width: 60px;
+    height: 20px;
+}
+
+.very-many-arrows .arrow-label-horizontal {
+    font-size: 0.45rem;
+    line-height: 1.1;
+}
+
+.arrow-label-horizontal {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: left;
+    white-space: nowrap;
+}
+
+/* Animated flow effect for horizontal migration arrows */
+.migration-arrow-horizontal.active path {
+    stroke-dasharray: 6 6;
+    animation: flow-right 2s linear infinite;
+}
+
+@keyframes flow-right {
+    0% {
+        stroke-dashoffset: 0;
+    }
+    100% {
+        stroke-dashoffset: -12;
+    }
+}
+
 /* Transfer Visualization Bar */
 .transfer-visualization {
-    margin-top: 0.5rem;
+    margin-top: 0;
     padding: 0.5rem;
     background: rgba(5, 7, 13, 0.5);
     border-radius: 6px;

@@ -117,10 +117,52 @@ function calculate() {
 
     const totalCapacityTB = totalCapacityPB * 1000;
 
+    // Update legend title with checkpoint size
+    const legendTitle = document.getElementById('legend-title');
+    if (legendTitle) {
+        legendTitle.textContent = `Capacity Grid Legend (Each cell = ${checkpointSize}TB checkpoint)`;
+    }
+
     // Determine competitor color scheme
     const isCompetitorW = competitorType.startsWith('weka');
     const competitorColor = isCompetitorW ? 'purple' : 'blue';
     updateCompetitorColors(competitorColor);
+
+    // Handle 100% SSD case - hide workflow section and Tier 2 for both systems
+    const is100PercentSSD = ssdPercentage === 100;
+    const workflowSection = document.getElementById('workflow-section');
+    const vduraTier2Container = document.getElementById('vdura-tier2-container');
+    const vduraMigrationContainer = document.getElementById('vdura-migration-container');
+    const vduraMigrationNote = document.getElementById('vdura-migration-note');
+    const vduraArchTitle = document.getElementById('vdura-arch-title');
+    const competitorTier2Container = document.getElementById('competitor-tier2-container');
+    const competitorMigrationContainer = document.getElementById('competitor-migration-container');
+    const competitorMigrationNote = document.getElementById('competitor-migration-note');
+
+    if (workflowSection) {
+        workflowSection.style.display = is100PercentSSD ? 'none' : 'block';
+    }
+    if (vduraTier2Container) {
+        vduraTier2Container.style.display = is100PercentSSD ? 'none' : 'block';
+    }
+    if (vduraMigrationContainer) {
+        vduraMigrationContainer.style.display = is100PercentSSD ? 'none' : '';
+    }
+    if (vduraMigrationNote) {
+        vduraMigrationNote.style.display = is100PercentSSD ? 'none' : 'block';
+    }
+    if (vduraArchTitle) {
+        vduraArchTitle.textContent = is100PercentSSD ? 'VDURA All Flash' : 'VDURA Hybrid Architecture';
+    }
+    if (competitorTier2Container) {
+        competitorTier2Container.style.display = is100PercentSSD ? 'none' : 'block';
+    }
+    if (competitorMigrationContainer) {
+        competitorMigrationContainer.style.display = is100PercentSSD ? 'none' : '';
+    }
+    if (competitorMigrationNote) {
+        competitorMigrationNote.style.display = is100PercentSSD ? 'none' : 'block';
+    }
 
     // Adjust grid layout for high capacity systems
     const archColumns = document.querySelectorAll('.architecture-column');
@@ -133,23 +175,36 @@ function calculate() {
     });
 
     // Architecture constants
-    const VPOD_PERFORMANCE = 65; // GB/s per VPOD
+    const VPOD_READ_PERFORMANCE = 65; // GB/s per VPOD (read)
+    const VPOD_WRITE_PERFORMANCE = 35 * (16/18); // GB/s per VPOD (write) = ~31.11 GB/s
     const VPOD_SSD_COUNT = 12; // SSDs per VPOD
     const VELO_SSD_COUNT = 2; // SSDs per VELO
     const VELO_SSD_SIZE = 2; // TB
-    const COMPETITOR_NODE_PERFORMANCE = 40; // GB/s per node (Nitro)
+    const COMPETITOR_NODE_READ_PERFORMANCE = 40; // GB/s per node (Nitro read)
     const COMPETITOR_SSD_COUNT = 14; // SSDs per node
     const JBOD_BANDWIDTH = 21.5; // GB/s per JBOD
     const JBOD_CAPACITY_TB = 3240; // 108x 30TB HDDs
     const MIN_VPODS = 3;
     const MIN_COMPETITOR_NODES = 8;
 
+    // Competitor write performance (varies by type)
+    let competitorNodeWritePerformance;
+    if (competitorType === 'weka_nitro' || competitorType === 'weka_prime') {
+        competitorNodeWritePerformance = 0.5 * COMPETITOR_NODE_READ_PERFORMANCE; // 20 GB/s
+    } else if (competitorType === 'comp_v_ebox') {
+        competitorNodeWritePerformance = 6; // GB/s per node
+    } else if (competitorType === 'comp_v_cbox_dbox') {
+        competitorNodeWritePerformance = 10; // GB/s per node
+    } else {
+        competitorNodeWritePerformance = 0.5 * COMPETITOR_NODE_READ_PERFORMANCE; // Default
+    }
+
     // Calculate VDURA configuration
     const vduraSSDCapacityTB = totalCapacityTB * (ssdPercentage / 100);
     const vduraHDDCapacityTB = totalCapacityTB - vduraSSDCapacityTB;
 
-    // VPODs needed for performance
-    const vpodsForPerformance = Math.ceil(performanceGBs / VPOD_PERFORMANCE);
+    // VPODs needed for write performance
+    const vpodsForPerformance = Math.ceil(performanceGBs / VPOD_WRITE_PERFORMANCE);
 
     // VPODs needed for SSD capacity (using largest SSD = 30TB)
     const largestSSD = 30;
@@ -158,8 +213,8 @@ function calculate() {
 
     // Calculate JBODs needed
     let numJBODs = Math.ceil(vduraHDDCapacityTB / JBOD_CAPACITY_TB);
-    if (numJBODs > 0 && numJBODs < 3) {
-        numJBODs = 3; // Minimum 3 JBODs if any are needed
+    if (numJBODs > 0 && numJBODs < 6) {
+        numJBODs = 6; // Minimum 6 JBODs if any are needed
     }
 
     // Determine minimum VPODs based on JBOD configuration
@@ -199,7 +254,7 @@ function calculate() {
         velos: totalVELOs,
         vpods: totalVPODs,
         ssdSize: vduraSSDSize,
-        ssdBandwidth: totalVPODs * VPOD_PERFORMANCE,
+        ssdBandwidth: totalVPODs * VPOD_WRITE_PERFORMANCE,
         ssdCapacity: actualVduraSSDCapacity,
         jbods: numJBODs,
         hddBandwidth: numJBODs * JBOD_BANDWIDTH,
@@ -229,7 +284,7 @@ function calculate() {
         competitor.migrationBandwidth = s3TransferRate;
     } else {
         // Fallback if pricing data not loaded
-        const competitorNodesForPerformance = Math.ceil(performanceGBs / COMPETITOR_NODE_PERFORMANCE);
+        const competitorNodesForPerformance = Math.ceil(performanceGBs / competitorNodeWritePerformance);
         const totalCompetitorNodes = Math.max(competitorNodesForPerformance, MIN_COMPETITOR_NODES);
         const competitorSSDSize = 30;
         const actualCompetitorSSDCapacity = totalCompetitorNodes * COMPETITOR_SSD_COUNT * competitorSSDSize;
@@ -237,7 +292,7 @@ function calculate() {
         competitor = {
             nodes: totalCompetitorNodes,
             ssdSize: competitorSSDSize,
-            ssdBandwidth: totalCompetitorNodes * COMPETITOR_NODE_PERFORMANCE,
+            ssdBandwidth: totalCompetitorNodes * competitorNodeWritePerformance,
             ssdCapacity: actualCompetitorSSDCapacity,
             s3Bandwidth: s3TransferRate,
             s3Capacity: actualVduraHDDCapacity,
@@ -280,11 +335,11 @@ function calculate() {
 
     // Update VDURA specs (display in PB with architecture details)
     document.getElementById('vdura-ssd-specs').innerHTML = `
-        <span class="spec-bandwidth">${vdura.ssdBandwidth.toLocaleString()} GB/s</span>
+        <span class="spec-bandwidth">${Math.round(vdura.ssdBandwidth).toLocaleString()} GB/s</span>
         <span class="spec-capacity">${(vdura.ssdCapacity / 1000).toFixed(1)} PB</span>
     `;
     document.getElementById('vdura-hdd-specs').innerHTML = `
-        <span class="spec-bandwidth">${vdura.hddBandwidth.toFixed(1)} GB/s</span>
+        <span class="spec-bandwidth">${vdura.hddBandwidth.toFixed(0)} GB/s</span>
         <span class="spec-capacity">${(vdura.hddCapacity / 1000).toFixed(1)} PB</span>
     `;
 
@@ -295,22 +350,22 @@ function calculate() {
     if (competitorType === 'weka_nitro') {
         competitorDetailsHTML = `
             <p><strong>${competitor.nodes} Servers</strong> × ${competitor.ssdSize}TB SSDs (14 per server)${competitorCostDisplay}</p>
-            <p><strong>S3 Object Store</strong> @ ${competitor.s3Bandwidth} GB/s (fixed bottleneck)</p>
+            <p><strong>S3 Object Store</strong> @ ${Math.round(competitor.s3Bandwidth)} GB/s (typical bottleneck)</p>
         `;
     } else if (competitorType === 'weka_prime') {
         competitorDetailsHTML = `
             <p><strong>${competitor.nodes} Servers</strong> × 2× 8TB + 18× ${competitor.ssdSize}TB${competitorCostDisplay}</p>
-            <p><strong>S3 Object Store</strong> @ ${competitor.s3Bandwidth} GB/s (fixed bottleneck)</p>
+            <p><strong>S3 Object Store</strong> @ ${Math.round(competitor.s3Bandwidth)} GB/s (typical bottleneck)</p>
         `;
     } else if (competitorType === 'comp_v_ebox') {
         competitorDetailsHTML = `
             <p><strong>${competitor.nodes} E-Boxes</strong> × 4.8TB SLC + 9× ${competitor.ssdSize}TB QLC${competitorCostDisplay}</p>
-            <p><strong>S3 Object Store</strong> @ ${competitor.s3Bandwidth} GB/s (fixed bottleneck)</p>
+            <p><strong>S3 Object Store</strong> @ ${Math.round(competitor.s3Bandwidth)} GB/s (typical bottleneck)</p>
         `;
     } else if (competitorType === 'comp_v_cbox_dbox') {
         competitorDetailsHTML = `
             <p><strong>${competitor.cBoxes} C-Boxes</strong> + <strong>${competitor.dBoxes} D-Boxes</strong> × 5.4TB SCM + 24× ${competitor.ssdSize}TB QLC${competitorCostDisplay}</p>
-            <p><strong>S3 Object Store</strong> @ ${competitor.s3Bandwidth} GB/s (fixed bottleneck)</p>
+            <p><strong>S3 Object Store</strong> @ ${Math.round(competitor.s3Bandwidth)} GB/s (typical bottleneck)</p>
         `;
     }
 
@@ -318,11 +373,11 @@ function calculate() {
 
     // Update Competitor specs (display in PB with architecture details)
     document.getElementById('competitor-ssd-specs').innerHTML = `
-        <span class="spec-bandwidth">${competitor.ssdBandwidth.toLocaleString()} GB/s</span>
+        <span class="spec-bandwidth">${Math.round(competitor.ssdBandwidth).toLocaleString()} GB/s</span>
         <span class="spec-capacity">${(competitor.ssdCapacity / 1000).toFixed(1)} PB</span>
     `;
     document.getElementById('competitor-s3-specs').innerHTML = `
-        <span class="spec-bandwidth">${competitor.s3Bandwidth} GB/s</span>
+        <span class="spec-bandwidth">${Math.round(competitor.s3Bandwidth)} GB/s</span>
     `;
 
     // Storage boxes now auto-size based on grid content
@@ -331,22 +386,24 @@ function calculate() {
     // Update migration arrows
     updateMigrationArrows(numJBODs, vdura.migrationBandwidth, competitor.migrationBandwidth);
 
-    // Update analysis results - VDURA
-    document.getElementById('vdura-migration-time').textContent = `${vduraMigrationTime.toFixed(1)} min`;
-    const vduraKeepUpEl = document.getElementById('vdura-can-keep-up');
+    // Update analysis results - VDURA (both "How it works" and "Workflow Analysis" sections)
+    document.getElementById('vdura-migration-time').textContent = `${vduraMigrationTime.toFixed(1)}min`;
+    document.getElementById('vdura-analysis-migration-time').textContent = `${vduraMigrationTime.toFixed(1)} min`;
+    const vduraKeepUpEl = document.getElementById('vdura-analysis-can-keep-up');
     vduraKeepUpEl.textContent = vduraCanKeepUp ? '✓ YES' : '✗ NO';
     vduraKeepUpEl.className = vduraCanKeepUp ? 'metric-value success' : 'metric-value failure';
 
-    // Update analysis results - Competitor
-    document.getElementById('competitor-migration-time').textContent = `${competitorMigrationTime.toFixed(1)} min`;
-    const compKeepUpEl = document.getElementById('competitor-can-keep-up');
+    // Update analysis results - Competitor (both "How it works" and "Workflow Analysis" sections)
+    document.getElementById('competitor-migration-time').textContent = `${competitorMigrationTime.toFixed(1)}min`;
+    document.getElementById('competitor-analysis-migration-time').textContent = `${competitorMigrationTime.toFixed(1)} min`;
+    const compKeepUpEl = document.getElementById('competitor-analysis-can-keep-up');
     compKeepUpEl.textContent = competitorCanKeepUp ? '✓ YES' : '✗ NO';
     compKeepUpEl.className = competitorCanKeepUp ? 'metric-value success' : 'metric-value failure';
 
     // Update insight text
     const bandwidthRatio = (vdura.migrationBandwidth / competitor.migrationBandwidth).toFixed(0);
     document.getElementById('insight-text').textContent =
-        `VDURA's parallel JBOD architecture provides ${bandwidthRatio}x faster migration (${vdura.migrationBandwidth.toFixed(1)} GB/s vs ${competitor.migrationBandwidth} GB/s), ` +
+        `VDURA's parallel JBOD architecture provides ${bandwidthRatio}x faster migration (${vdura.migrationBandwidth.toFixed(0)} GB/s vs ${competitor.migrationBandwidth.toFixed(0)} GB/s), ` +
         `enabling efficient checkpoint cycling while competitors become bottlenecked and fill their SSD tier.`;
 
     // Debug logging
@@ -357,7 +414,7 @@ function calculate() {
         ssdCapacity: (vdura.ssdCapacity / 1000).toFixed(2) + ' PB',
         jbods: vdura.jbods,
         hddCapacity: (vdura.hddCapacity / 1000).toFixed(2) + ' PB',
-        migrationBandwidth: vdura.migrationBandwidth.toFixed(1) + ' GB/s',
+        migrationBandwidth: vdura.migrationBandwidth.toFixed(0) + ' GB/s',
         migrationTime: vduraMigrationTime.toFixed(1) + ' min',
         canKeepUp: vduraCanKeepUp
     });
@@ -425,8 +482,9 @@ function updateCompetitorColors(color) {
 
 // Calculate WEKA competitor (Nitro or Prime)
 function calculateCompetitorWEKA(performanceRequired, capacityTB, pricing, competitorType) {
-    const performancePerServer = pricing.performance_per_server_gbs;
-    const serversForPerformance = Math.ceil(performanceRequired / performancePerServer);
+    // Write performance for WEKA is 0.5x read performance
+    const writePerformancePerServer = 0.5 * pricing.performance_per_server_gbs; // 20 GB/s write
+    const serversForPerformance = Math.ceil(performanceRequired / writePerformancePerServer);
 
     let servers = Math.max(serversForPerformance, pricing.min_servers);
     const ssdsPerServer = pricing.ssds_per_server;
@@ -477,7 +535,7 @@ function calculateCompetitorWEKA(performanceRequired, capacityTB, pricing, compe
         return {
             nodes: servers,
             ssdSize: chosenDataSSD,
-            ssdBandwidth: servers * performancePerServer,
+            ssdBandwidth: servers * writePerformancePerServer,
             ssdCapacity: ssdCapacity,
             totalCost: totalCost
         };
@@ -522,7 +580,7 @@ function calculateCompetitorWEKA(performanceRequired, capacityTB, pricing, compe
         return {
             nodes: servers,
             ssdSize: chosenSSDSize,
-            ssdBandwidth: servers * performancePerServer,
+            ssdBandwidth: servers * writePerformancePerServer,
             ssdCapacity: ssdCapacity,
             totalCost: totalCost
         };
@@ -531,8 +589,9 @@ function calculateCompetitorWEKA(performanceRequired, capacityTB, pricing, compe
 
 // Calculate Competitor V E-Box (SLC + QLC)
 function calculateCompetitorVEBox(performanceRequired, capacityTB, pricing) {
-    const performancePerNode = pricing.performance_per_node_gbs;
-    const nodesForPerformance = Math.ceil(performanceRequired / performancePerNode);
+    // Write performance for E-Box is 6 GB/s per node
+    const writePerformancePerNode = 6; // GB/s write
+    const nodesForPerformance = Math.ceil(performanceRequired / writePerformancePerNode);
 
     let nodes = Math.max(nodesForPerformance, pricing.min_nodes);
 
@@ -578,7 +637,7 @@ function calculateCompetitorVEBox(performanceRequired, capacityTB, pricing) {
     return {
         nodes: nodes,
         ssdSize: chosenQLC,
-        ssdBandwidth: nodes * performancePerNode,
+        ssdBandwidth: nodes * writePerformancePerNode,
         ssdCapacity: ssdCapacity,
         totalCost: totalCost
     };
@@ -588,9 +647,9 @@ function calculateCompetitorVEBox(performanceRequired, capacityTB, pricing) {
 function calculateCompetitorVCDBox(performanceRequired, capacityTB, pricing) {
     const totalCapacityTB = capacityTB;
 
-    // Calculate C boxes needed for performance (40 GB/s per C box)
-    const performancePerCBox = pricing.c_box.performance_per_node_gbs;
-    const cBoxesForPerformance = Math.ceil(performanceRequired / performancePerCBox);
+    // Calculate C boxes needed for performance (10 GB/s write per C box)
+    const writePerformancePerCBox = 10; // GB/s write
+    const cBoxesForPerformance = Math.ceil(performanceRequired / writePerformancePerCBox);
 
     // Calculate D boxes needed for capacity
     // Each D box has: 8× 800GB SCM + 22× QLC SSDs
@@ -678,15 +737,15 @@ function calculateCompetitorVCDBox(performanceRequired, capacityTB, pricing) {
     // Calculate actual capacity
     const actualCapacity = dBoxes * (scmCapacityPerDBox + (chosenQLC * qlcCount));
 
-    // Calculate performance based on C boxes
-    const performanceGBs = cBoxes * performancePerCBox;
+    // Calculate write performance based on C boxes
+    const writePerformanceGBs = cBoxes * writePerformancePerCBox;
 
     return {
         nodes: cBoxes + dBoxes,
         cBoxes: cBoxes,
         dBoxes: dBoxes,
         ssdSize: chosenQLC,
-        ssdBandwidth: performanceGBs,
+        ssdBandwidth: writePerformanceGBs,
         ssdCapacity: actualCapacity,
         totalCost: totalCost
     };
@@ -749,7 +808,7 @@ function updateMigrationArrows(numJBODs, vduraBandwidth, competitorBandwidth) {
                         </defs>
                         <path d="M 20 10 L 20 66" stroke="#e79f23" stroke-width="3" fill="none" marker-end="url(#arrowhead-vdura-${i})" />
                     </svg>
-                    <div class="arrow-label-vertical">JBOD ${i + 1}<br><span class="bandwidth-highlight">${JBOD_BANDWIDTH} GB/s</span></div>
+                    <div class="arrow-label-vertical">JBOD ${i + 1}<br><span class="bandwidth-highlight">${Math.round(JBOD_BANDWIDTH)} GB/s</span></div>
                 </div>
             `;
         }
@@ -774,7 +833,7 @@ function updateMigrationArrows(numJBODs, vduraBandwidth, competitorBandwidth) {
                 </defs>
                 <path d="M 20 10 L 20 66" stroke="#ef4444" stroke-width="3" fill="none" marker-end="url(#arrowhead-comp)" stroke-dasharray="6,6" />
             </svg>
-            <div class="arrow-label-vertical"><span class="bandwidth-highlight">5 GB/s</span> S3</div>
+            <div class="arrow-label-vertical"><span class="bandwidth-highlight">${Math.round(competitorBandwidth)} GB/s</span> S3</div>
         </div>
     `;
 }
@@ -785,6 +844,12 @@ function startAnimation() {
     if (animationInterval) {
         clearInterval(animationInterval);
     }
+
+    // Fix grid layout to allow boxes to expand
+    const columns = document.querySelectorAll('.architecture-column');
+    columns.forEach(col => {
+        col.style.gridTemplateRows = '45px 60px auto 130px 60px auto';
+    });
 
     // Seed with initial checkpoints for immediate visual feedback
     seedInitialCheckpoints();
@@ -831,10 +896,22 @@ function seedInitialCheckpoints() {
         phaseTimeElapsed: 0
     };
 
-    // Initialize status animation state (starts migrating immediately)
+    // Initialize status animation state (starts with numCheckpoints in SSD)
+    const initialCheckpoints = workflowParams.numCheckpoints;
+
+    // Create initial checkpoints for VDURA status animation
+    const vduraInitialCheckpoints = [];
+    for (let i = 1; i <= initialCheckpoints; i++) {
+        vduraInitialCheckpoints.push({
+            id: i,
+            status: 'active',
+            migrationProgress: 0
+        });
+    }
+
     statusAnimationState.vdura = {
-        checkpoints: [],
-        nextCheckpointId: 1,
+        checkpoints: vduraInitialCheckpoints,
+        nextCheckpointId: initialCheckpoints + 1,
         phase: 'checkpoint_write',
         phaseTimeElapsed: 0,
         ssdWriteProgress: 0,
@@ -844,9 +921,19 @@ function seedInitialCheckpoints() {
         writeCompletedAt: null
     };
 
+    // Create initial checkpoints for Competitor status animation
+    const competitorInitialCheckpoints = [];
+    for (let i = 1; i <= initialCheckpoints; i++) {
+        competitorInitialCheckpoints.push({
+            id: i,
+            status: 'active',
+            migrationProgress: 0
+        });
+    }
+
     statusAnimationState.competitor = {
-        checkpoints: [],
-        nextCheckpointId: 1,
+        checkpoints: competitorInitialCheckpoints,
+        nextCheckpointId: initialCheckpoints + 1,
         phase: 'checkpoint_write',
         phaseTimeElapsed: 0,
         ssdWriteProgress: 0,
@@ -1126,13 +1213,12 @@ function renderSystemCheckpoints(system) {
     const checkpointSize = workflowParams.checkpointSize;
 
     // Calculate grid sizes (each cell = 1 checkpoint)
-    const ssdCapacity = config.ssdCapacity;
-    const hddCapacity = system === 'vdura' ? config.hddCapacity : config.s3Capacity;
+    const ssdCapacity = config.ssdCapacity; // Already in TB
+    const hddCapacity = system === 'vdura' ? config.hddCapacity : config.s3Capacity; // Already in TB
 
-    // Fixed grid size: 15 columns × 10 rows = 150 cells
-    const FIXED_GRID_CELLS = 150;
-    const ssdCells = FIXED_GRID_CELLS;
-    const hddCells = FIXED_GRID_CELLS;
+    // Calculate grid cells based on actual capacity (capacity in TB / checkpoint size in TB)
+    const ssdCells = Math.max(15, Math.ceil(ssdCapacity / checkpointSize));
+    const hddCells = Math.max(15, Math.ceil(hddCapacity / checkpointSize));
 
     // Sort checkpoints by ID for display
     const activeCheckpoints = state.checkpoints.filter(cp => cp.status === 'active').sort((a, b) => b.id - a.id);
@@ -1187,6 +1273,32 @@ function renderSystemCheckpoints(system) {
     setTimeout(() => {
         state.newCheckpointId = null;
     }, 1000);
+
+    // Set storage box heights to fit grid content
+    setTimeout(() => {
+        const ssdBoxId = system + '-ssd-box';
+        const hddBoxId = system === 'vdura' ? 'vdura-hdd-box' : 'competitor-s3-box';
+
+        // Fix SSD box height
+        const ssdBox = document.getElementById(ssdBoxId);
+        const ssdGrid = ssdContainer.querySelector('.capacity-grid');
+        if (ssdBox && ssdGrid) {
+            const padding = 16; // 0.5rem * 2
+            const border = 4; // 2px * 2
+            ssdBox.style.height = (ssdGrid.offsetHeight + padding + border) + 'px';
+            ssdBox.style.minHeight = (ssdGrid.offsetHeight + padding + border) + 'px';
+        }
+
+        // Fix HDD/S3 box height
+        const hddBox = document.getElementById(hddBoxId);
+        const hddGrid = archivedContainer.querySelector('.capacity-grid');
+        if (hddBox && hddGrid) {
+            const padding = 16; // 0.5rem * 2
+            const border = 4; // 2px * 2
+            hddBox.style.height = (hddGrid.offsetHeight + padding + border) + 'px';
+            hddBox.style.minHeight = (hddGrid.offsetHeight + padding + border) + 'px';
+        }
+    }, 10);
 }
 
 // Update workflow status indicators
@@ -1204,6 +1316,7 @@ function updateSystemStatus(system) {
     const ssdTimeEl = document.getElementById(`${system}-ssd-time`);
     const migrationTimeEl = document.getElementById(`${system}-migration-time`);
     const checkpointCounterEl = document.getElementById(`${system}-checkpoint-counter`);
+    const ssdCheckpointCounterEl = document.getElementById(`${system}-ssd-checkpoint-counter`);
 
     if (!statusTextEl || !progressEl) return;
 
@@ -1218,12 +1331,27 @@ function updateSystemStatus(system) {
     }
     progressEl.style.width = `${Math.min(100, progressPercent)}%`;
 
+    // Update progress label with time
+    const progressLabelEl = progressEl.parentElement.previousElementSibling;
+    if (progressLabelEl && progressLabelEl.classList.contains('progress-label')) {
+        const checkpointIntervalMin = workflowParams.checkpointInterval;
+        progressLabelEl.textContent = `Model run (${checkpointIntervalMin.toFixed(0)} min)`;
+    }
+
     // Get counts from status animation state
     const activeCount = state.checkpoints.filter(cp => cp.status === 'active').length;
     const migratingCount = state.checkpoints.filter(cp => cp.status === 'migrating').length;
     const archivedCount = state.archivedCount; // Use counter instead of filtering
 
-    // Update checkpoint counter
+    // Update checkpoint counters
+    const ssdCheckpointCount = activeCount + migratingCount;
+
+    if (ssdCheckpointCounterEl) {
+        const checkpointWord = ssdCheckpointCount === 1 ? 'checkpoint' : 'checkpoints';
+        const ssdCounterText = `${ssdCheckpointCount} ${checkpointWord} in SSD layer`;
+        ssdCheckpointCounterEl.textContent = ssdCounterText;
+    }
+
     if (checkpointCounterEl) {
         const tierName = system === 'vdura' ? 'HDD layer' : 'S3';
         const checkpointWord = archivedCount === 1 ? 'checkpoint' : 'checkpoints';

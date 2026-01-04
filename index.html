@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VDURA Tiering Architecture Comparison | GPU Checkpoint Workflow</title>
     <link rel="icon" type="image/x-icon" href="https://www.vdura.com/favicon.ico">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=8">
 </head>
 <body>
     <div class="container">
@@ -32,30 +32,33 @@
             </div>
             <div class="concept-content">
                 <div class="concept-text">
-                    <h3>GPU Training Checkpoint Challenge</h3>
-                    <p>Large-scale GPU training requires massive storage capacity but doesn't need it all to be SSD. The key is migrating checkpoints efficiently:</p>
+                    <h3>Why Tiering Is Hard (But Worth Getting Right)</h3>
+                    <p>HDDs cost 10x less than SSDs—but that advantage only materializes if you can tier data fast enough. Most solutions fail at tiering because:</p>
                     <ul>
-                        <li><strong>Fast checkpoint writes</strong> to SSD tier</li>
-                        <li><strong>Rapid migration</strong> to capacity tier during compute</li>
-                        <li><strong>Keep hot checkpoints</strong> in fast tier, archive old ones</li>
+                        <li><strong>Slow migration bottlenecks:</strong> S3 object stores max out at ~5 GB/s, creating massive backlogs</li>
+                        <li><strong>Sequential-only access:</strong> Traditional tiering assumes cold data stays cold—checkpoints need random access</li>
+                        <li><strong>No parallelism:</strong> Single-pipe architectures can't scale migration bandwidth with capacity</li>
                     </ul>
+                    <p><strong>VDURA does tiering differently:</strong> Parallel JBOD arrays with 129 GB/s aggregate bandwidth (6× JBODs @ 21.5 GB/s each) migrate checkpoints during model run—no bottlenecks, no waiting, no SSD overflow.</p>
                 </div>
                 <div class="concept-comparison">
                     <div class="arch-box vdura-arch">
-                        <h4>VDURA Hybrid Architecture</h4>
-                        <p><strong>SSD Tier:</strong> Auto-sized VPODs (65 GB/s each)</p>
+                        <h4>VDURA: Tiering Done Right</h4>
+                        <p><strong>SSD Tier:</strong> Hot checkpoints @ 65 GB/s per VPOD</p>
                         <p><strong>HDD Tier:</strong> Parallel JBODs @ 21.5 GB/s each</p>
-                        <p class="advantage">✓ Scalable migration bandwidth</p>
-                        <p class="advantage">✓ Cost-optimized with fast tiering</p>
-                        <p class="advantage">✓ Flash first checkpoint performance</p>
+                        <p class="advantage">✓ Migration bandwidth scales with capacity</p>
+                        <p class="advantage">✓ 10x lower cost per TB with HDD tier</p>
+                        <p class="advantage">✓ Zero bottlenecks—migrate during compute</p>
+                        <p class="advantage">✓ Unified namespace—no separate object store</p>
                     </div>
                     <div class="arch-box competitor-arch">
-                        <h4>All-Flash + S3 Architecture</h4>
-                        <p><strong>SSD Tier:</strong> Auto-sized nodes (40 GB/s each)</p>
-                        <p><strong>S3 Tier:</strong> Object Store @ 5 GB/s FIXED</p>
-                        <p class="limitation">✗ 5GB/s (Est) bottleneck to S3</p>
-                        <p class="limitation">✗ More expensive all-SSD tier</p>
-                        <p class="limitation">✗ S3 tier not included in system price</p>
+                        <h4>Competitor: Tiering Bottleneck</h4>
+                        <p><strong>SSD Tier:</strong> Overprovisioned all-flash @ 40 GB/s per node</p>
+                        <p><strong>S3 Tier:</strong> Typically 5 GB/s object store (external)</p>
+                        <p class="limitation">✗ Migration slower than checkpoint rate</p>
+                        <p class="limitation">✗ 10x higher cost—forced to buy all SSD</p>
+                        <p class="limitation">✗ S3 bottleneck creates backlog</p>
+                        <p class="limitation">✗ Separate namespace and management</p>
                     </div>
                 </div>
             </div>
@@ -68,7 +71,7 @@
             </div>
 
             <div class="form-group">
-                <label for="performance">Read Performance Required (GB/s)</label>
+                <label for="performance">Write Performance Required (GB/s)</label>
                 <input type="number" id="performance" min="195" max="5000" value="1000" step="65">
             </div>
 
@@ -109,13 +112,19 @@
         </div>
 
         <!-- Workflow Status Indicators -->
-        <div class="workflow-section">
+        <div class="workflow-section" id="workflow-section">
             <div class="panel-header">
                 <h2>How it works:  VDURA's flash first writes + rapid, parallel migration to HDD layer</h2>
             </div>
             <div class="workflow-status-container">
             <div class="status-indicator vdura-status" id="vdura-status">
                 <div class="status-title">VDURA Checkpoint workflow</div>
+                <div class="progress-bar-container">
+                    <div class="progress-label">Model run</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="vdura-progress" style="width: 0%"></div>
+                    </div>
+                </div>
                 <div class="status-text" id="vdura-status-text">Initializing...</div>
                 <div class="transfer-visualization">
                     <div class="transfer-label">Checkpoint Transfer Pipeline</div>
@@ -137,6 +146,7 @@
                         <div style="font-size: 1.2rem; color: var(--accent-gold);">→</div>
                         <div class="transfer-stage">
                             <div class="stage-name">Migration to HDD</div>
+                            <div class="checkpoint-counter-large" id="vdura-ssd-checkpoint-counter">0 checkpoints in SSD layer</div>
                             <div class="stage-bar-row">
                                 <div class="stage-bar">
                                     <div class="stage-bar-fill migration" id="vdura-migration-bar" style="width: 0%"></div>
@@ -147,15 +157,15 @@
                         </div>
                     </div>
                 </div>
-                <div class="progress-bar-container">
-                    <div class="progress-label">Model run</div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="vdura-progress" style="width: 0%"></div>
-                    </div>
-                </div>
             </div>
             <div class="status-indicator competitor-status" id="competitor-status">
                 <div class="status-title">Competitor Checkpoint workflow</div>
+                <div class="progress-bar-container">
+                    <div class="progress-label">Model run</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="competitor-progress" style="width: 0%"></div>
+                    </div>
+                </div>
                 <div class="status-text" id="competitor-status-text">Initializing...</div>
                 <div class="transfer-visualization">
                     <div class="transfer-label">Checkpoint Transfer Pipeline</div>
@@ -177,6 +187,7 @@
                         <div style="font-size: 1.2rem; color: var(--accent-purple);">→</div>
                         <div class="transfer-stage">
                             <div class="stage-name">S3 Migration</div>
+                            <div class="checkpoint-counter-large" id="competitor-ssd-checkpoint-counter">0 checkpoints in SSD layer</div>
                             <div class="stage-bar-row">
                                 <div class="stage-bar">
                                     <div class="stage-bar-fill migration slow" id="competitor-migration-bar" style="width: 0%"></div>
@@ -187,12 +198,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="progress-bar-container">
-                    <div class="progress-label">Model run</div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="competitor-progress" style="width: 0%"></div>
-                    </div>
-                </div>
             </div>
             </div>
         </div>
@@ -200,17 +205,17 @@
         <!-- Visualization Section -->
         <div class="visualization-section">
             <div class="panel-header">
-                <h2>Checkpoint Workflow Visualization</h2>
+                <h2>System level analysis - where is data located</h2>
                 <p class="subtitle">Width = Bandwidth, Depth = Capacity • Live Animation (1 checkpoint/3sec)</p>
             </div>
 
             <div class="comparison-grid">
                 <!-- VDURA Visualization -->
                 <div class="architecture-column">
-                    <h3 class="arch-title vdura-title">VDURA Hybrid Architecture</h3>
+                    <h3 class="arch-title vdura-title" id="vdura-arch-title">VDURA Hybrid Architecture</h3>
                     <div class="system-details" id="vdura-system-details">
                         <p><strong>16 VPODs</strong> × 8TB SSDs (12 per VPOD)</p>
-                        <p><strong>3 JBODs</strong> × 3.2 PB (108× 30TB HDDs)</p>
+                        <p><strong>6 JBODs</strong> × 3.2 PB (108× 30TB HDDs each)</p>
                     </div>
 
                     <div class="tier-container">
@@ -231,19 +236,19 @@
                     <div class="migration-arrows-container" id="vdura-migration-container">
                         <!-- Parallel migration arrows will be generated here -->
                     </div>
-                    <div class="migration-note vdura-note-text">
+                    <div class="migration-note vdura-note-text" id="vdura-migration-note">
                         <p>Parallel transfer has sufficient bandwidth to transfer older checkpoints to HDD during model run</p>
                     </div>
 
-                    <div class="tier-container">
+                    <div class="tier-container" id="vdura-tier2-container">
                         <div class="tier-label">
                             <div class="tier-label-header">
                                 <h4>Tier 2: Parallel JBODs</h4>
                                 <p class="tier-note vdura-note">Included in system cost • Same namespace and control plane</p>
                             </div>
                             <div class="tier-specs" id="vdura-hdd-specs">
-                                <span class="spec-bandwidth">64.5 GB/s</span>
-                                <span class="spec-capacity">9,720 TB</span>
+                                <span class="spec-bandwidth">129 GB/s</span>
+                                <span class="spec-capacity">19,440 TB</span>
                             </div>
                         </div>
                         <div class="storage-box hdd-tier" id="vdura-hdd-box">
@@ -264,7 +269,7 @@
                     </select>
                     <div class="system-details" id="competitor-system-details">
                         <p><strong>25 Nodes</strong> × 15TB SSDs (14 per node)</p>
-                        <p><strong>S3 Object Store</strong> @ 5 GB/s (fixed bottleneck)</p>
+                        <p><strong>S3 Object Store</strong> @ 5 GB/s (typical bottleneck)</p>
                     </div>
 
                     <div class="tier-container">
@@ -285,11 +290,11 @@
                     <div class="migration-arrows-container bottleneck" id="competitor-migration-container">
                         <!-- S3 migration arrow will be generated here -->
                     </div>
-                    <div class="migration-note competitor-note-text">
+                    <div class="migration-note competitor-note-text" id="competitor-migration-note">
                         <p>Slow S3 connection not fast enough to move checkpoints to object store and clear SSD layer</p>
                     </div>
 
-                    <div class="tier-container">
+                    <div class="tier-container" id="competitor-tier2-container">
                         <div class="tier-label">
                             <div class="tier-label-header">
                                 <h4>Tier 2: S3 Object Store</h4>
@@ -309,7 +314,7 @@
             </div>
 
             <div class="legend-box">
-                <h4>Capacity Grid Legend (Each cell = 100TB checkpoint)</h4>
+                <h4 id="legend-title">Capacity Grid Legend (Each cell = 100TB checkpoint)</h4>
                 <div class="legend-items">
                     <div class="legend-item">
                         <div class="legend-swatch empty"></div>
@@ -342,11 +347,11 @@
                     <h3>VDURA Performance</h3>
                     <div class="metric">
                         <span class="metric-label">Migration Time per Checkpoint</span>
-                        <span class="metric-value" id="vdura-migration-time">9.3 min</span>
+                        <span class="metric-value" id="vdura-analysis-migration-time">9.3 min</span>
                     </div>
                     <div class="metric">
                         <span class="metric-label">Can Keep Up with Workflow?</span>
-                        <span class="metric-value success" id="vdura-can-keep-up">✓ YES</span>
+                        <span class="metric-value success" id="vdura-analysis-can-keep-up">✓ YES</span>
                     </div>
                 </div>
 
@@ -354,11 +359,11 @@
                     <h3>Competitor Performance</h3>
                     <div class="metric">
                         <span class="metric-label">Migration Time per Checkpoint</span>
-                        <span class="metric-value" id="competitor-migration-time">33.3 min</span>
+                        <span class="metric-value" id="competitor-analysis-migration-time">33.3 min</span>
                     </div>
                     <div class="metric">
                         <span class="metric-label">Can Keep Up with Workflow?</span>
-                        <span class="metric-value failure" id="competitor-can-keep-up">✗ NO</span>
+                        <span class="metric-value failure" id="competitor-analysis-can-keep-up">✗ NO</span>
                     </div>
                 </div>
             </div>
@@ -366,7 +371,7 @@
             <div class="insight-box">
                 <h4>💡 Key Insight</h4>
                 <p id="insight-text">
-                    VDURA's parallel JBOD architecture provides 13x faster migration (64.5 GB/s vs 5 GB/s),
+                    VDURA's parallel JBOD architecture provides 26x faster migration (129 GB/s vs 5 GB/s),
                     enabling efficient checkpoint cycling while competitors become bottlenecked and fill their SSD tier.
                 </p>
             </div>

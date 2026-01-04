@@ -331,14 +331,14 @@
             <h2>Executive Summary</h2>
             <p>Modern AI/ML training workloads generate massive checkpoint files that must be stored reliably and accessed efficiently. While these checkpoints require flash-first performance during active training phases, they can be migrated to cost-effective capacity storage once archived. The critical challenge is <strong>migration bandwidth</strong>—insufficient throughput between tiers creates bottlenecks that fill the expensive SSD tier and halt training workflows.</p>
 
-            <p>VDURA's intelligent tiering architecture solves this challenge through parallel, high-bandwidth connections to integrated JBOD storage (21.5 GB/s per JBOD, linearly scalable). In contrast, competing all-flash solutions rely on external S3 object stores with fixed 5 GB/s (estimated) connections, creating persistent bottlenecks and requiring separate procurement, management, and maintenance.</p>
+            <p>VDURA's intelligent tiering architecture solves this challenge through parallel, high-bandwidth connections to integrated JBOD storage (21.5 GB/s per JBOD, linearly scalable). In contrast, competing all-flash solutions rely on external S3 object stores with typically 5 GB/s (estimated) connections, creating persistent bottlenecks and requiring separate procurement, management, and maintenance.</p>
 
             <p>This technical bulletin examines VDURA's unified hybrid architecture and demonstrates how integrated tiering with scalable bandwidth delivers superior operational efficiency compared to all-flash + S3 approaches.</p>
         </section>
 
         <div class="callout-success">
             <h3>VDURA Architectural Advantage</h3>
-            <p><strong>Single integrated system</strong> with parallel HDD bandwidth, unified namespace, and one control plane—delivering 13x faster migration (64.5 GB/s vs 5 GB/s) without additional procurement or operational overhead.</p>
+            <p><strong>Single integrated system</strong> with parallel HDD bandwidth, unified namespace, and one control plane—delivering 26x faster migration (129 GB/s vs 5 GB/s) without additional procurement or operational overhead.</p>
         </div>
 
         <section id="checkpoint-challenge">
@@ -369,10 +369,10 @@
 
             <div class="comparison-grid">
                 <div class="comparison-box vdura">
-                    <h4>VDURA (3 JBODs)</h4>
+                    <h4>VDURA (6 JBODs)</h4>
                     <div class="stat-label">Aggregate Bandwidth</div>
-                    <div class="stat-large highlight-green">64.5 GB/s</div>
-                    <p style="font-size: 0.9rem;"><strong>Migration time:</strong> 25.8 minutes<br><strong>Result:</strong> Migrates checkpoint well before next arrives</p>
+                    <div class="stat-large highlight-green">129 GB/s</div>
+                    <p style="font-size: 0.9rem;"><strong>Migration time:</strong> 12.9 minutes<br><strong>Result:</strong> Migrates checkpoint well before next arrives</p>
                     <p class="advantage">Can keep up with workflow</p>
                 </div>
                 <div class="comparison-box competitor">
@@ -409,8 +409,8 @@
                 <div style="text-align: center; margin: 1rem 0;">⬇️ Parallel Migration (21.5 GB/s per JBOD) ⬇️</div>
                 <div class="tier-box">
                     <div class="tier-label">TIER 2: PARALLEL JBODs</div>
-                    <div>• 3 JBODs × 3.24 PB each = 9.72 PB capacity</div>
-                    <div>• 3 JBODs × 21.5 GB/s each = 64.5 GB/s aggregate</div>
+                    <div>• 6 JBODs × 3.24 PB each = 19.44 PB capacity</div>
+                    <div>• 6 JBODs × 21.5 GB/s each = 129 GB/s aggregate</div>
                     <div>• Archived checkpoint storage</div>
                 </div>
                 <div style="margin-top: 1rem; color: var(--accent-green);">
@@ -429,7 +429,7 @@
             </ul>
 
             <h3>2.3 Scalable Migration Bandwidth</h3>
-            <p>VDURA's parallel JBOD architecture provides linear scaling of migration bandwidth. Unlike fixed-bandwidth S3 connections, VDURA systems can increase throughput by adding JBODs:</p>
+            <p>VDURA's parallel JBOD architecture provides linear scaling of migration bandwidth. Unlike typical S3 connections with limited bandwidth, VDURA systems can increase throughput by adding JBODs:</p>
 
             <table class="data-table">
                 <thead>
@@ -448,10 +448,10 @@
                         <td>77.5 minutes</td>
                     </tr>
                     <tr>
-                        <td>3 JBODs</td>
-                        <td>64.5 GB/s</td>
-                        <td>9.72 PB</td>
-                        <td class="highlight-green">25.8 minutes</td>
+                        <td>6 JBODs</td>
+                        <td>129 GB/s</td>
+                        <td>19.44 PB</td>
+                        <td class="highlight-green">12.9 minutes</td>
                     </tr>
                     <tr>
                         <td>5 JBODs</td>
@@ -480,7 +480,7 @@
             <div class="callout-warning">
                 <h3>S3 Integration Limitations</h3>
                 <ul style="margin-bottom: 0;">
-                    <li><strong>Fixed bandwidth bottleneck:</strong> Typical S3 connections limited to ~5 GB/s</li>
+                    <li><strong>Bandwidth bottleneck:</strong> Typical S3 connections limited to ~5 GB/s</li>
                     <li><strong>Separate procurement:</strong> Object storage not included in base system pricing</li>
                     <li><strong>Different control plane:</strong> Separate management, monitoring, and administration</li>
                     <li><strong>Protocol overhead:</strong> Object API adds latency compared to block/file access</li>
@@ -581,8 +581,8 @@
                     <tr>
                         <td><strong>Tier 2 Bandwidth</strong></td>
                         <td class="highlight-green">21.5 GB/s per JBOD (scalable)</td>
-                        <td class="highlight-red">5 GB/s fixed (est)</td>
-                        <td class="highlight-red">5 GB/s fixed (est)</td>
+                        <td class="highlight-red">5 GB/s typical (est)</td>
+                        <td class="highlight-red">5 GB/s typical (est)</td>
                     </tr>
                     <tr>
                         <td><strong>Namespace Integration</strong></td>
@@ -611,8 +611,8 @@
                     <tr>
                         <td><strong>Migration Scaling</strong></td>
                         <td class="highlight-green">Linear (add JBODs)</td>
-                        <td class="highlight-red">Fixed (gateway bottleneck)</td>
-                        <td class="highlight-red">Fixed (gateway bottleneck)</td>
+                        <td class="highlight-red">Typical gateway bottleneck</td>
+                        <td class="highlight-red">Typical gateway bottleneck</td>
                     </tr>
                     <tr>
                         <td><strong>Flash-First Checkpoint</strong></td>
@@ -667,7 +667,7 @@
             <h3>5.4 Predictable Performance</h3>
             <p>With scalable migration bandwidth, VDURA systems deliver <strong>predictable performance</strong> regardless of checkpoint frequency or size. Migration operations complete within the checkpoint interval, ensuring the SSD tier maintains consistent free space for incoming checkpoints.</p>
 
-            <p>S3-based systems with fixed 5 GB/s bandwidth exhibit <strong>unpredictable performance degradation</strong> as checkpoint sizes grow or frequencies increase. The point at which migration bandwidth becomes insufficient depends on workload characteristics, creating operational uncertainty.</p>
+            <p>S3-based systems with typically 5 GB/s bandwidth exhibit <strong>unpredictable performance degradation</strong> as checkpoint sizes grow or frequencies increase. The point at which migration bandwidth becomes insufficient depends on workload characteristics, creating operational uncertainty.</p>
         </section>
 
         <section id="recommendations">
@@ -688,7 +688,7 @@
             <p>All-flash + S3 architectures face challenges when:</p>
 
             <ul>
-                <li><strong>Checkpoint migration exceeds 5 GB/s:</strong> Fixed bandwidth creates permanent bottleneck</li>
+                <li><strong>Checkpoint migration exceeds 5 GB/s:</strong> Typical S3 bandwidth creates permanent bottleneck</li>
                 <li><strong>Unified namespace is required:</strong> Object storage API differs from block/file semantics</li>
                 <li><strong>Single-vendor solutions preferred:</strong> S3 typically requires separate procurement</li>
                 <li><strong>TCO sensitivity:</strong> Dual-system costs (storage + object) increase complexity</li>
@@ -708,7 +708,7 @@
 
         <section id="conclusion">
             <h2>7. Conclusion</h2>
-            <p>Intelligent tiering is essential for cost-effective management of AI/ML checkpoint workflows, but <strong>implementation architecture matters profoundly</strong>. VDURA's parallel JBOD design with integrated high-bandwidth connections delivers 13x faster migration (64.5 GB/s vs 5 GB/s) compared to all-flash + S3 approaches, enabling continuous training workflows without SSD tier saturation.</p>
+            <p>Intelligent tiering is essential for cost-effective management of AI/ML checkpoint workflows, but <strong>implementation architecture matters profoundly</strong>. VDURA's parallel JBOD design with integrated high-bandwidth connections delivers 26x faster migration (129 GB/s vs 5 GB/s) compared to all-flash + S3 approaches, enabling continuous training workflows without SSD tier saturation.</p>
 
             <p>Beyond raw performance, VDURA's unified architecture provides operational advantages that reduce complexity and TCO:</p>
 
@@ -719,7 +719,7 @@
                 <li><strong>Flash-first performance:</strong> All checkpoints write to SSD tier for optimal speed</li>
             </ul>
 
-            <p>Competitor all-flash solutions require separate S3 object storage with fixed-bandwidth connections, creating persistent bottlenecks, namespace fragmentation, and dual-system operational complexity. For checkpoint-intensive workloads, these architectural constraints fundamentally limit workflow efficiency.</p>
+            <p>Competitor all-flash solutions require separate S3 object storage with typically limited-bandwidth connections, creating persistent bottlenecks, namespace fragmentation, and dual-system operational complexity. For checkpoint-intensive workloads, these architectural constraints fundamentally limit workflow efficiency.</p>
 
             <div class="callout">
                 <h3>The Architectural Imperative</h3>
