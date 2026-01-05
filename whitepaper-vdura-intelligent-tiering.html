@@ -370,16 +370,16 @@
             <div class="comparison-grid">
                 <div class="comparison-box vdura">
                     <h4>VDURA (6 JBODs)</h4>
-                    <div class="stat-label">Aggregate Bandwidth</div>
+                    <div class="stat-label">Migration Bandwidth</div>
                     <div class="stat-large highlight-green">129 GB/s</div>
-                    <p style="font-size: 0.9rem;"><strong>Migration time:</strong> 12.9 minutes<br><strong>Result:</strong> Migrates checkpoint well before next arrives</p>
+                    <p style="font-size: 0.9rem;"><strong>Write bandwidth:</strong> 186 GB/s (6 VPODs @ 31 GB/s each)<br><strong>Migration time:</strong> 12.9 minutes<br><strong>Result:</strong> Migrates checkpoint well before next arrives</p>
                     <p class="advantage">Can keep up with workflow</p>
                 </div>
                 <div class="comparison-box competitor">
                     <h4>Competitor W + S3</h4>
-                    <div class="stat-label">S3 Connection Bandwidth</div>
+                    <div class="stat-label">Migration Bandwidth</div>
                     <div class="stat-large highlight-red">5 GB/s</div>
-                    <p style="font-size: 0.9rem;"><strong>Migration time:</strong> 333 minutes<br><strong>Result:</strong> 5.5x longer than checkpoint interval</p>
+                    <p style="font-size: 0.9rem;"><strong>Write bandwidth:</strong> 120 GB/s (6 servers @ 20 GB/s each)<br><strong>Migration time:</strong> 333 minutes<br><strong>Result:</strong> 5.5x longer than checkpoint interval</p>
                     <p class="limitation">Cannot keep up with workflow</p>
                 </div>
             </div>
