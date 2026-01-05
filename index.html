@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VDURA Tiering Architecture Comparison | GPU Checkpoint Workflow</title>
     <link rel="icon" type="image/x-icon" href="https://www.vdura.com/favicon.ico">
-    <link rel="stylesheet" href="styles.css?v=15">
+    <link rel="stylesheet" href="styles.css?v=17">
 </head>
 <body>
     <div class="container">
@@ -53,7 +53,7 @@
                     </div>
                     <div class="arch-box competitor-arch">
                         <h4>Competitor: Tiering Bottleneck</h4>
-                        <p><strong>SSD Tier:</strong> Overprovisioned all-flash @ 40 GB/s write per node</p>
+                        <p><strong>SSD Tier:</strong> Overprovisioned all-flash @ 6-20 GB/s write per node</p>
                         <p><strong>S3 Tier:</strong> Typically 5 GB/s object store (external)</p>
                         <p class="limitation">✗ Migration slower than checkpoint rate</p>
                         <p class="limitation">✗ 10x higher cost—forced to buy all SSD</p>
