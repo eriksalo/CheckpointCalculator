@@ -446,9 +446,33 @@ function calculate() {
         competitorCanKeepUp: competitorCanKeepUp
     };
 
+    // Sync Tier 1 container heights to align Tier 2 sections
+    syncTier1Heights();
+
     // Always restart animation when any input changes
     if (animationInterval) {
         startAnimation();
+    }
+}
+
+// Sync Tier 1 container heights across both columns so Tier 2 aligns
+function syncTier1Heights() {
+    const vduraTier1 = document.querySelector('.architecture-column:first-child .tier-container:first-of-type');
+    const competitorTier1 = document.querySelector('.architecture-column:last-child .tier-container:first-of-type');
+
+    if (vduraTier1 && competitorTier1) {
+        // Reset heights to auto first to get natural heights
+        vduraTier1.style.height = 'auto';
+        competitorTier1.style.height = 'auto';
+
+        // Get the natural heights
+        const vduraHeight = vduraTier1.offsetHeight;
+        const competitorHeight = competitorTier1.offsetHeight;
+
+        // Set both to the max height
+        const maxHeight = Math.max(vduraHeight, competitorHeight);
+        vduraTier1.style.height = `${maxHeight}px`;
+        competitorTier1.style.height = `${maxHeight}px`;
     }
 }
 

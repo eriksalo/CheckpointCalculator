@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VDURA Tiering Architecture Comparison | GPU Checkpoint Workflow</title>
     <link rel="icon" type="image/x-icon" href="https://www.vdura.com/favicon.ico">
-    <link rel="stylesheet" href="styles.css?v=17">
+    <link rel="stylesheet" href="styles.css?v=26">
 </head>
 <body>
     <div class="container">
@@ -244,9 +244,6 @@
                     <div class="migration-arrows-container" id="vdura-migration-container">
                         <!-- Parallel migration arrows will be generated here -->
                     </div>
-                    <div class="migration-note vdura-note-text" id="vdura-migration-note">
-                        <p>Parallel transfer has sufficient bandwidth to transfer older checkpoints to HDD during model run</p>
-                    </div>
 
                     <div class="tier-container" id="vdura-tier2-container">
                         <div class="tier-label">
@@ -297,9 +294,6 @@
 
                     <div class="migration-arrows-container bottleneck" id="competitor-migration-container">
                         <!-- S3 migration arrow will be generated here -->
-                    </div>
-                    <div class="migration-note competitor-note-text" id="competitor-migration-note">
-                        <p>Slow S3 connection not fast enough to move checkpoints to object store and clear SSD layer</p>
                     </div>
 
                     <div class="tier-container" id="competitor-tier2-container">
@@ -390,6 +384,6 @@
         </footer>
     </div>
 
-    <script src="calculator.js"></script>
+    <script src="calculator.js?v=24"></script>
 </body>
 </html>
