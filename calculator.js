@@ -1233,8 +1233,9 @@ function renderSystemCheckpoints(system) {
             warningEl.id = warningId;
             warningEl.className = 'ssd-full-warning';
             warningEl.innerHTML = '⚠️ SSD FULL - System Cannot Accept New Checkpoints!';
-            // Append to the storage box parent for overlay positioning
-            const storageBox = ssdContainer.closest('.storage-box');
+            // Append to the specific storage box for this system
+            const storageBoxId = `${system}-ssd-box`;
+            const storageBox = document.getElementById(storageBoxId);
             if (storageBox) {
                 storageBox.style.position = 'relative'; // Ensure parent is positioned
                 storageBox.appendChild(warningEl);
