@@ -446,8 +446,8 @@ function calculate() {
         competitorCanKeepUp: competitorCanKeepUp
     };
 
-    // Sync Tier 1 container heights to align Tier 2 sections
-    syncTier1Heights();
+    // Tier 2 alignment now handled purely by CSS grid with fixed row heights
+    // syncTier1Heights();
 
     // Always restart animation when any input changes
     if (animationInterval) {
@@ -455,25 +455,30 @@ function calculate() {
     }
 }
 
-// Sync Tier 1 container heights across both columns so Tier 2 aligns
+// Sync Tier 1 container heights to ensure Tier 2 aligns perfectly
 function syncTier1Heights() {
     const vduraTier1 = document.querySelector('.architecture-column:first-child .tier-container:first-of-type');
     const competitorTier1 = document.querySelector('.architecture-column:last-child .tier-container:first-of-type');
 
-    if (vduraTier1 && competitorTier1) {
-        // Reset heights to auto first to get natural heights
-        vduraTier1.style.height = 'auto';
-        competitorTier1.style.height = 'auto';
+    if (!vduraTier1 || !competitorTier1) return;
 
-        // Get the natural heights
-        const vduraHeight = vduraTier1.offsetHeight;
-        const competitorHeight = competitorTier1.offsetHeight;
+    // Reset heights to get natural size
+    vduraTier1.style.height = 'auto';
+    competitorTier1.style.height = 'auto';
 
-        // Set both to the max height
-        const maxHeight = Math.max(vduraHeight, competitorHeight);
-        vduraTier1.style.height = `${maxHeight}px`;
-        competitorTier1.style.height = `${maxHeight}px`;
-    }
+    // Wait for layout to settle
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            // Get the natural heights
+            const vduraHeight = vduraTier1.offsetHeight;
+            const competitorHeight = competitorTier1.offsetHeight;
+
+            // Set both to the maximum height
+            const maxHeight = Math.max(vduraHeight, competitorHeight);
+            vduraTier1.style.height = `${maxHeight}px`;
+            competitorTier1.style.height = `${maxHeight}px`;
+        });
+    });
 }
 
 // Storage boxes now auto-size based on grid content - no manual sizing needed

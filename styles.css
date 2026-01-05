@@ -368,12 +368,12 @@ header {
 
 .architecture-column {
     display: grid;
-    grid-template-rows: 45px 60px auto 275px 60px auto;
+    grid-template-rows: 45px 60px 500px 150px auto;
     gap: 0.5rem;
 }
 
 .architecture-column.high-capacity {
-    grid-template-rows: 45px 60px auto 275px 60px auto;
+    grid-template-rows: 45px 60px 500px 150px auto;
 }
 
 .competitor-dropdown-title {
@@ -951,7 +951,7 @@ header {
 
 /* Legend Box */
 .legend-box {
-    margin-top: 3rem;
+    margin-top: 8rem;
     padding: 0.75rem 1rem;
     background: rgba(5, 7, 13, 0.5);
     border-radius: 8px;
