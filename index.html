@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VDURA Tiering Architecture Comparison | GPU Checkpoint Workflow</title>
     <link rel="icon" type="image/x-icon" href="https://www.vdura.com/favicon.ico">
-    <link rel="stylesheet" href="styles.css?v=8">
+    <link rel="stylesheet" href="styles.css?v=14">
 </head>
 <body>
     <div class="container">
@@ -44,7 +44,7 @@
                 <div class="concept-comparison">
                     <div class="arch-box vdura-arch">
                         <h4>VDURA: Tiering Done Right</h4>
-                        <p><strong>SSD Tier:</strong> Hot checkpoints @ 65 GB/s per VPOD</p>
+                        <p><strong>SSD Tier:</strong> Hot checkpoints @ 31 GB/s write per VPOD</p>
                         <p><strong>HDD Tier:</strong> Parallel JBODs @ 21.5 GB/s each</p>
                         <p class="advantage">✓ Migration bandwidth scales with capacity</p>
                         <p class="advantage">✓ 10x lower cost per TB with HDD tier</p>
@@ -53,7 +53,7 @@
                     </div>
                     <div class="arch-box competitor-arch">
                         <h4>Competitor: Tiering Bottleneck</h4>
-                        <p><strong>SSD Tier:</strong> Overprovisioned all-flash @ 40 GB/s per node</p>
+                        <p><strong>SSD Tier:</strong> Overprovisioned all-flash @ 40 GB/s write per node</p>
                         <p><strong>S3 Tier:</strong> Typically 5 GB/s object store (external)</p>
                         <p class="limitation">✗ Migration slower than checkpoint rate</p>
                         <p class="limitation">✗ 10x higher cost—forced to buy all SSD</p>
@@ -119,6 +119,10 @@
             <div class="workflow-status-container">
             <div class="status-indicator vdura-status" id="vdura-status">
                 <div class="status-title">VDURA Checkpoint workflow</div>
+                <div class="performance-summary" id="vdura-performance-summary">
+                    <div class="perf-stat"><strong>SSD Write:</strong> <span id="vdura-ssd-perf">640 GB/s</span></div>
+                    <div class="perf-stat"><strong>Migration:</strong> <span id="vdura-migration-perf">129 GB/s</span></div>
+                </div>
                 <div class="progress-bar-container">
                     <div class="progress-label">Model run</div>
                     <div class="progress-bar">
@@ -160,6 +164,10 @@
             </div>
             <div class="status-indicator competitor-status" id="competitor-status">
                 <div class="status-title">Competitor Checkpoint workflow</div>
+                <div class="performance-summary" id="competitor-performance-summary">
+                    <div class="perf-stat"><strong>SSD Write:</strong> <span id="competitor-ssd-perf">320 GB/s</span></div>
+                    <div class="perf-stat"><strong>Migration:</strong> <span id="competitor-migration-perf">5 GB/s</span></div>
+                </div>
                 <div class="progress-bar-container">
                     <div class="progress-label">Model run</div>
                     <div class="progress-bar">
@@ -222,7 +230,7 @@
                         <div class="tier-label">
                             <h4>Tier 1: All-Flash</h4>
                             <div class="tier-specs" id="vdura-ssd-specs">
-                                <span class="spec-bandwidth">640 GB/s</span>
+                                <span class="spec-bandwidth">Write: 640 GB/s</span>
                                 <span class="spec-capacity">120 TB</span>
                             </div>
                         </div>
@@ -276,7 +284,7 @@
                         <div class="tier-label">
                             <h4>Tier 1: All-Flash</h4>
                             <div class="tier-specs" id="competitor-ssd-specs">
-                                <span class="spec-bandwidth">320 GB/s</span>
+                                <span class="spec-bandwidth">Write: 320 GB/s</span>
                                 <span class="spec-capacity">120 TB</span>
                             </div>
                         </div>

@@ -1121,7 +1121,7 @@ header {
     border-radius: 8px;
     border: 2px solid;
     width: 550px;
-    height: 245px;
+    height: 275px;
     font-size: 0.85rem;
     display: flex;
     flex-direction: column;
@@ -1158,6 +1158,22 @@ header {
 
 .status-indicator.competitor-status.competitor-blue .status-title {
     color: var(--accent-blue);
+}
+
+.performance-summary {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.perf-stat {
+    color: var(--text-secondary);
+}
+
+.perf-stat strong {
+    color: var(--text-primary);
+    font-weight: 600;
 }
 
 .status-text {

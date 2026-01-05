@@ -338,7 +338,7 @@
 
         <div class="callout-success">
             <h3>VDURA Architectural Advantage</h3>
-            <p><strong>Single integrated system</strong> with parallel HDD bandwidth, unified namespace, and one control plane—delivering 26x faster migration (129 GB/s vs 5 GB/s) without additional procurement or operational overhead.</p>
+            <p><strong>Single integrated system</strong> with parallel HDD bandwidth, unified namespace, and one control plane—delivering 13x to 86x faster migration (64.5 GB/s to 430 GB/s vs 5 GB/s typical S3) by scaling from 3 to 20 JBODs without additional procurement or operational overhead.</p>
         </div>
 
         <section id="checkpoint-challenge">
@@ -403,7 +403,7 @@
                 <div class="tier-box">
                     <div class="tier-label">TIER 1: ALL-FLASH (VPOD Servers)</div>
                     <div>• 10-16 VPOD servers with 12× SSDs each</div>
-                    <div>• 65 GB/s per VPOD (aggregate: 650-1,040 GB/s)</div>
+                    <div>• 31 GB/s write per VPOD (aggregate: 310-500 GB/s)</div>
                     <div>• Hot checkpoint storage and active I/O</div>
                 </div>
                 <div style="text-align: center; margin: 1rem 0;">⬇️ Parallel Migration (21.5 GB/s per JBOD) ⬇️</div>
@@ -442,10 +442,10 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>1 JBOD</td>
-                        <td>21.5 GB/s</td>
-                        <td>3.24 PB</td>
-                        <td>77.5 minutes</td>
+                        <td>3 JBODs</td>
+                        <td>64.5 GB/s</td>
+                        <td>9.72 PB</td>
+                        <td>25.8 minutes</td>
                     </tr>
                     <tr>
                         <td>6 JBODs</td>
@@ -454,16 +454,16 @@
                         <td class="highlight-green">12.9 minutes</td>
                     </tr>
                     <tr>
-                        <td>5 JBODs</td>
-                        <td>107.5 GB/s</td>
-                        <td>16.2 PB</td>
-                        <td>15.5 minutes</td>
-                    </tr>
-                    <tr>
                         <td>10 JBODs</td>
                         <td>215 GB/s</td>
                         <td>32.4 PB</td>
                         <td>7.8 minutes</td>
+                    </tr>
+                    <tr>
+                        <td>20 JBODs</td>
+                        <td>430 GB/s</td>
+                        <td>64.8 PB</td>
+                        <td>3.9 minutes</td>
                     </tr>
                 </tbody>
             </table>
@@ -573,10 +573,10 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td><strong>Tier 1 Performance</strong></td>
-                        <td>65 GB/s per VPOD</td>
-                        <td>40 GB/s per server</td>
-                        <td>40 GB/s per C-Box</td>
+                        <td><strong>Tier 1 Write Performance</strong></td>
+                        <td>31 GB/s per VPOD</td>
+                        <td>20 GB/s per server</td>
+                        <td>10 GB/s per C-Box</td>
                     </tr>
                     <tr>
                         <td><strong>Tier 2 Bandwidth</strong></td>

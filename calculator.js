@@ -335,7 +335,7 @@ function calculate() {
 
     // Update VDURA specs (display in PB with architecture details)
     document.getElementById('vdura-ssd-specs').innerHTML = `
-        <span class="spec-bandwidth">${Math.round(vdura.ssdBandwidth).toLocaleString()} GB/s</span>
+        <span class="spec-bandwidth">Write: ${Math.round(vdura.ssdBandwidth).toLocaleString()} GB/s</span>
         <span class="spec-capacity">${(vdura.ssdCapacity / 1000).toFixed(1)} PB</span>
     `;
     document.getElementById('vdura-hdd-specs').innerHTML = `
@@ -373,7 +373,7 @@ function calculate() {
 
     // Update Competitor specs (display in PB with architecture details)
     document.getElementById('competitor-ssd-specs').innerHTML = `
-        <span class="spec-bandwidth">${Math.round(competitor.ssdBandwidth).toLocaleString()} GB/s</span>
+        <span class="spec-bandwidth">Write: ${Math.round(competitor.ssdBandwidth).toLocaleString()} GB/s</span>
         <span class="spec-capacity">${(competitor.ssdCapacity / 1000).toFixed(1)} PB</span>
     `;
     document.getElementById('competitor-s3-specs').innerHTML = `
@@ -385,6 +385,12 @@ function calculate() {
 
     // Update migration arrows
     updateMigrationArrows(numJBODs, vdura.migrationBandwidth, competitor.migrationBandwidth);
+
+    // Update performance summary in workflow section
+    document.getElementById('vdura-ssd-perf').textContent = `${Math.round(vdura.ssdBandwidth).toLocaleString()} GB/s`;
+    document.getElementById('vdura-migration-perf').textContent = `${vdura.migrationBandwidth.toFixed(0)} GB/s`;
+    document.getElementById('competitor-ssd-perf').textContent = `${Math.round(competitor.ssdBandwidth).toLocaleString()} GB/s`;
+    document.getElementById('competitor-migration-perf').textContent = `${Math.round(competitor.s3Bandwidth)} GB/s`;
 
     // Update analysis results - VDURA (both "How it works" and "Workflow Analysis" sections)
     document.getElementById('vdura-migration-time').textContent = `${vduraMigrationTime.toFixed(1)}min`;
