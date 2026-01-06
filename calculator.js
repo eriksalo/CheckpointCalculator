@@ -412,6 +412,12 @@ function calculate() {
         `VDURA's parallel JBOD architecture provides ${bandwidthRatio}x faster migration (${vdura.migrationBandwidth.toFixed(0)} GB/s vs ${competitor.migrationBandwidth.toFixed(0)} GB/s), ` +
         `enabling efficient checkpoint cycling while competitors become bottlenecked and fill their SSD tier.`;
 
+    // Update cycle bandwidth display
+    document.getElementById('cycle-vdura-tier1').textContent = `${Math.round(vdura.ssdBandwidth).toLocaleString()} GB/s`;
+    document.getElementById('cycle-vdura-tier2').textContent = `${vdura.migrationBandwidth.toFixed(0)} GB/s`;
+    document.getElementById('cycle-competitor-tier1').textContent = `${Math.round(competitor.ssdBandwidth).toLocaleString()} GB/s`;
+    document.getElementById('cycle-competitor-tier2').textContent = `${Math.round(competitor.migrationBandwidth)} GB/s`;
+
     // Debug logging
     console.log('VDURA:', {
         velos: vdura.velos,

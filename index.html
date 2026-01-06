@@ -217,6 +217,37 @@
                 <p class="subtitle">Real-time visualization of model training phases</p>
             </div>
             <div class="cycle-visualization-container">
+                <!-- Left side: Bandwidth information -->
+                <div class="cycle-bandwidth-panel">
+                    <h3 style="color: var(--accent-gold); margin-bottom: 1rem; font-size: 1.2rem;">System Bandwidth Comparison</h3>
+
+                    <div class="bandwidth-system vdura-bandwidth">
+                        <h4 style="color: var(--success-green);">VDURA Hybrid Architecture</h4>
+                        <div class="bandwidth-tier">
+                            <div class="bandwidth-label">Tier-1 Write Bandwidth</div>
+                            <div class="bandwidth-value" id="cycle-vdura-tier1">640 GB/s</div>
+                        </div>
+                        <div class="bandwidth-tier">
+                            <div class="bandwidth-label">Tier-2 Migration Bandwidth</div>
+                            <div class="bandwidth-value" id="cycle-vdura-tier2">129 GB/s</div>
+                        </div>
+                    </div>
+
+                    <div class="bandwidth-system competitor-bandwidth">
+                        <h4 style="color: var(--accent-blue);">Competitor Architecture</h4>
+                        <div class="bandwidth-tier">
+                            <div class="bandwidth-label">Tier-1 Write Bandwidth</div>
+                            <div class="bandwidth-value" id="cycle-competitor-tier1">320 GB/s</div>
+                        </div>
+                        <div class="bandwidth-tier">
+                            <div class="bandwidth-label">Tier-2 S3 Bandwidth</div>
+                            <div class="bandwidth-value" id="cycle-competitor-tier2">5 GB/s</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right side: Animation -->
+                <div class="cycle-animation-panel">
                 <svg id="training-cycle-svg" viewBox="0 0 800 200" preserveAspectRatio="xMidYMid meet">
                     <!-- Background grid -->
                     <defs>
@@ -301,6 +332,7 @@
                         <div class="legend-icon progress-icon"></div>
                         <span>Current Position</span>
                     </div>
+                </div>
                 </div>
             </div>
         </div>
