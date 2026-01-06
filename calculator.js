@@ -1341,6 +1341,7 @@ function renderSystemCheckpoints(system) {
 function updateStatusIndicators() {
     updateSystemStatus('vdura');
     updateSystemStatus('competitor');
+    updateTrainingCycleVisualization();
 }
 
 function updateSystemStatus(system) {
@@ -1502,4 +1503,62 @@ function updateMigrationArrowAnimation(system) {
             arrow.classList.remove('active');
         }
     });
+}
+
+// Update training cycle visualization (uses VDURA state as reference)
+function updateTrainingCycleVisualization() {
+    const progressIndicator = document.getElementById('cycle-progress-indicator');
+    const phaseLabel = document.getElementById('cycle-phase-label');
+
+    if (!progressIndicator || !phaseLabel) return;
+
+    const state = statusAnimationState.vdura; // Use VDURA as reference for cycle visualization
+
+    // Calculate position based on current phase and progress
+    // SVG viewBox is 800 units wide
+    // We'll show 4 train cycles across the width (200 units each)
+    // Checkpoint write happens at positions: 160, 360, 560, 760
+
+    const cycleWidth = 200; // Width of one train cycle
+    const checkpointInterval = workflowParams.checkpointInterval;
+
+    let position = 0;
+    let phaseText = '';
+
+    if (state.phase === 'checkpoint_write') {
+        // During checkpoint write: position at the checkpoint bar
+        // Use write progress to show position within the checkpoint write phase
+        const writeProgress = state.ssdWriteProgress / 100; // 0 to 1
+
+        // Get current cycle number (loops through 4 cycles)
+        const cycleNum = (state.nextCheckpointId - 1) % 4;
+        const basePosition = cycleNum * cycleWidth;
+
+        // Position at the checkpoint bar (160, 360, 560, or 760)
+        position = basePosition + 160 + (writeProgress * 10); // Small movement during write
+        phaseText = '⚡ Checkpoint Write';
+
+    } else if (state.phase === 'model_run') {
+        // During model run: move across the train cycle
+        const runProgress = state.phaseTimeElapsed / checkpointInterval; // 0 to 1
+
+        // Get current cycle number
+        const cycleNum = (state.nextCheckpointId - 1) % 4;
+        const basePosition = cycleNum * cycleWidth;
+
+        // Start after the checkpoint bar (170) and move to the next checkpoint (160 of next cycle)
+        const startPos = 170;
+        const endPos = cycleWidth + 160; // 360
+        position = basePosition + startPos + (runProgress * (endPos - startPos));
+
+        phaseText = '🔄 Model Training';
+    }
+
+    // Clamp position to SVG bounds and loop around
+    position = position % 800;
+
+    // Update SVG elements
+    progressIndicator.setAttribute('x', position);
+    phaseLabel.setAttribute('x', Math.max(10, Math.min(position + 10, 790)));
+    phaseLabel.textContent = phaseText;
 }

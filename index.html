@@ -210,6 +210,96 @@
             </div>
         </div>
 
+        <!-- Training Cycle Visualization -->
+        <div class="training-cycle-section">
+            <div class="panel-header">
+                <h2>Training & Checkpoint Cycle</h2>
+                <p class="subtitle">Real-time visualization of model training phases</p>
+            </div>
+            <div class="cycle-visualization-container">
+                <svg id="training-cycle-svg" viewBox="0 0 800 200" preserveAspectRatio="xMidYMid meet">
+                    <!-- Background grid -->
+                    <defs>
+                        <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+                            <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(148, 163, 184, 0.1)" stroke-width="0.5"/>
+                        </pattern>
+                    </defs>
+                    <rect width="800" height="200" fill="url(#grid)" />
+
+                    <!-- Train cycles (4 cycles shown) -->
+                    <g id="train-cycles">
+                        <!-- Cycle 1 -->
+                        <g class="train-cycle">
+                            <text x="50" y="30" fill="#e79f23" font-size="14" font-weight="600">Train</text>
+                            <path d="M 30 70 Q 50 40, 70 70 Q 90 100, 110 70 Q 130 40, 150 70"
+                                  stroke="#e79f23" stroke-width="2" fill="none" opacity="0.8"/>
+                        </g>
+
+                        <!-- Cycle 2 -->
+                        <g class="train-cycle">
+                            <text x="250" y="30" fill="#e79f23" font-size="14" font-weight="600">Train</text>
+                            <path d="M 230 70 Q 250 40, 270 70 Q 290 100, 310 70 Q 330 40, 350 70"
+                                  stroke="#e79f23" stroke-width="2" fill="none" opacity="0.8"/>
+                        </g>
+
+                        <!-- Cycle 3 -->
+                        <g class="train-cycle">
+                            <text x="450" y="30" fill="#e79f23" font-size="14" font-weight="600">Train</text>
+                            <path d="M 430 70 Q 450 45, 470 70 Q 490 95, 510 70 Q 530 45, 550 70"
+                                  stroke="#e79f23" stroke-width="2" fill="none" opacity="0.8"/>
+                        </g>
+
+                        <!-- Cycle 4 -->
+                        <g class="train-cycle">
+                            <text x="650" y="30" fill="#e79f23" font-size="14" font-weight="600">Train</text>
+                            <path d="M 630 70 Q 650 45, 670 70 Q 690 95, 710 70 Q 730 45, 750 70"
+                                  stroke="#e79f23" stroke-width="2" fill="none" opacity="0.8"/>
+                        </g>
+                    </g>
+
+                    <!-- Checkpoint bars -->
+                    <g id="checkpoint-bars">
+                        <!-- Checkpoint 1 -->
+                        <rect x="172" y="90" width="25" height="70" fill="#10b981" opacity="0.7" rx="2"/>
+                        <text x="185" y="170" fill="#f8fafc" font-size="11" text-anchor="middle" font-weight="500">Checkpoint</text>
+
+                        <!-- Checkpoint 2 -->
+                        <rect x="372" y="90" width="25" height="70" fill="#10b981" opacity="0.7" rx="2"/>
+
+                        <!-- Checkpoint 3 (smaller) -->
+                        <rect x="577" y="100" width="20" height="60" fill="#10b981" opacity="0.6" rx="2"/>
+                        <text x="587" y="170" fill="#f8fafc" font-size="11" text-anchor="middle" font-weight="500">Checkpoint</text>
+                    </g>
+
+                    <!-- Animated progress indicator -->
+                    <rect id="cycle-progress-indicator" x="0" y="0" width="4" height="200"
+                          fill="#46b0ff" opacity="0.8" rx="2">
+                        <animate attributeName="opacity" values="0.8;1;0.8" dur="1s" repeatCount="indefinite"/>
+                    </rect>
+
+                    <!-- Phase label -->
+                    <text id="cycle-phase-label" x="10" y="195" fill="#46b0ff" font-size="12" font-weight="600">
+                        Checkpoint Write
+                    </text>
+                </svg>
+
+                <div class="cycle-legend">
+                    <div class="legend-item">
+                        <div class="legend-icon train-icon"></div>
+                        <span>Training/Fine-Tuning Phase</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon checkpoint-icon"></div>
+                        <span>Checkpoint Write Phase</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon progress-icon"></div>
+                        <span>Current Position</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Visualization Section -->
         <div class="visualization-section">
             <div class="panel-header">
