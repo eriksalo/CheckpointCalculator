@@ -1469,6 +1469,22 @@ header {
     margin-top: 0.15rem;
 }
 
+/* Emily Message */
+.emily-message {
+    animation: blink-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes blink-glow {
+    0%, 100% {
+        opacity: 1;
+        text-shadow: 0 0 10px rgba(231, 159, 35, 0.8), 0 0 20px rgba(231, 159, 35, 0.5);
+    }
+    50% {
+        opacity: 0.4;
+        text-shadow: 0 0 5px rgba(231, 159, 35, 0.3);
+    }
+}
+
 /* Training Cycle Visualization */
 .training-cycle-section {
     background: var(--card-bg);

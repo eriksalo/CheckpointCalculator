@@ -1505,60 +1505,59 @@ function updateMigrationArrowAnimation(system) {
     });
 }
 
-// Update training cycle visualization (uses VDURA state as reference)
+// Track which cycle we're currently in (updated only at start of checkpoint_write)
+let currentCycleNumber = -1;
+let lastPhase = '';
+
+// Update training cycle visualization (synchronized with workflow animation)
 function updateTrainingCycleVisualization() {
     const progressIndicator = document.getElementById('cycle-progress-indicator');
     const phaseLabel = document.getElementById('cycle-phase-label');
 
     if (!progressIndicator || !phaseLabel) return;
 
-    const state = statusAnimationState.vdura; // Use VDURA as reference for cycle visualization
+    const state = statusAnimationState.vdura; // Use VDURA state to sync with workflow animation
 
-    // Calculate position based on current phase and progress
-    // SVG viewBox is 800 units wide
-    // We'll show 4 train cycles across the width (200 units each)
-    // Checkpoint write happens at positions: 160, 360, 560, 760
+    // Update cycle number only when we start a new checkpoint_write phase
+    if (state.phase === 'checkpoint_write' && lastPhase !== 'checkpoint_write') {
+        currentCycleNumber++;
+    }
+    lastPhase = state.phase;
 
-    const cycleWidth = 200; // Width of one train cycle
-    const checkpointInterval = workflowParams.checkpointInterval;
-
+    const cycleWidth = 200; // Each train+checkpoint cycle is 200 units wide
     let position = 0;
     let phaseText = '';
 
     if (state.phase === 'checkpoint_write') {
         // During checkpoint write: position at the checkpoint bar
-        // Use write progress to show position within the checkpoint write phase
         const writeProgress = state.ssdWriteProgress / 100; // 0 to 1
 
-        // Get current cycle number (loops through 4 cycles)
-        const cycleNum = (state.nextCheckpointId - 1) % 4;
-        const basePosition = cycleNum * cycleWidth;
+        // Base position for this cycle
+        const cycleStart = currentCycleNumber * cycleWidth;
 
-        // Position at the checkpoint bar (160, 360, 560, or 760)
-        position = basePosition + 160 + (writeProgress * 10); // Small movement during write
+        // Position at checkpoint bar (172 within cycle) + movement during write (25 units)
+        position = cycleStart + 172 + (writeProgress * 25);
         phaseText = '⚡ Checkpoint Write';
 
     } else if (state.phase === 'model_run') {
         // During model run: move across the train cycle
-        const runProgress = state.phaseTimeElapsed / checkpointInterval; // 0 to 1
+        const runProgress = state.phaseTimeElapsed / workflowParams.checkpointInterval; // 0 to 1
 
-        // Get current cycle number
-        const cycleNum = (state.nextCheckpointId - 1) % 4;
-        const basePosition = cycleNum * cycleWidth;
+        // Base position for this cycle (same as the checkpoint we just wrote)
+        const cycleStart = currentCycleNumber * cycleWidth;
 
-        // Start after the checkpoint bar (170) and move to the next checkpoint (160 of next cycle)
-        const startPos = 170;
-        const endPos = cycleWidth + 160; // 360
-        position = basePosition + startPos + (runProgress * (endPos - startPos));
-
+        // Move from end of checkpoint (197) to start of next checkpoint (172 of next cycle)
+        const startPos = 197;
+        const endPos = 200 + 172; // 372
+        position = cycleStart + startPos + (runProgress * (endPos - startPos));
         phaseText = '🔄 Model Training';
     }
 
-    // Clamp position to SVG bounds and loop around
-    position = position % 800;
+    // Display position wraps at 800 (shows 4 cycles)
+    const displayPosition = position % 800;
 
     // Update SVG elements
-    progressIndicator.setAttribute('x', position);
-    phaseLabel.setAttribute('x', Math.max(10, Math.min(position + 10, 790)));
+    progressIndicator.setAttribute('x', displayPosition);
+    phaseLabel.setAttribute('x', Math.max(10, Math.min(displayPosition + 10, 790)));
     phaseLabel.textContent = phaseText;
 }
