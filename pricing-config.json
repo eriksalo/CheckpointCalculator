@@ -1,23 +1,23 @@
 {
   "pricing_trends": {
     "Q2_2025": {
-      "ssd_30tb": 3062,
+      "ssd_30tb": 3886,
       "hdd_30tb": 495
     },
     "Q3_2025": {
-      "ssd_30tb": 3207,
+      "ssd_30tb": 4070,
       "hdd_30tb": 495
     },
     "Q4_2025": {
-      "ssd_30tb": 7765,
+      "ssd_30tb": 9854,
       "hdd_30tb": 580
     },
     "Q1_2026": {
-      "ssd_30tb": 9318,
+      "ssd_30tb": 11826,
       "hdd_30tb": 668
     },
     "Q2_2026": {
-      "ssd_30tb": 11181,
+      "ssd_30tb": 14188,
       "hdd_30tb": 768
     }
   },
@@ -37,10 +37,10 @@
         },
         "dram_price_per_gb": 5.67,
         "ssds": {
-          "2TB": 205,
-          "8TB": 680,
-          "15TB": 1344,
-          "30TB": 3062
+          "2TB": 260,
+          "8TB": 863,
+          "15TB": 1706,
+          "30TB": 3886
         },
         "jbod_4u108": {
           "cost": 71424,
@@ -62,11 +62,11 @@
         "nic_cost": 1800,
         "dram_gb": 768,
         "dram_price_per_gb": 5.67,
-        "performance_per_server_gbs": 40,
+        "performance_per_server_gbs": 90,
         "ssds": {
-          "8TB": 680,
-          "15TB": 1344,
-          "30TB": 3062
+          "8TB": 863,
+          "15TB": 1706,
+          "30TB": 3886
         },
         "min_servers": 8,
         "ssds_per_server": 14,
@@ -81,12 +81,12 @@
         "dram_price_per_gb": 5.67,
         "performance_per_server_gbs": 20,
         "boot_ssds": {
-          "8TB": 680,
+          "8TB": 863,
           "count": 2
         },
         "data_ssds": {
-          "30TB": 3062,
-          "61TB": 6228,
+          "30TB": 3886,
+          "61TB": 7904,
           "count": 18
         },
         "min_servers": 8,
@@ -104,14 +104,14 @@
           "cost": 1470
         },
         "qlc_ssds": {
-          "30TB": 2450,
-          "60TB": 4899,
-          "122TB": 9985,
+          "30TB": 3108,
+          "60TB": 6217,
+          "122TB": 12669,
           "count": 9
         },
         "min_nodes": 11,
-        "software_support_multiplier": 1.22,
-        "software_support_description": "Software and support is 55% of total cost (hardware is 45%)"
+        "software_support_multiplier": 1.5,
+        "software_support_description": "Software and support is 60% of total cost (hardware is 40%)"
       },
       "comp_v_cbox_dbox": {
         "c_box": {
@@ -127,16 +127,16 @@
             "cost_per_drive": 200
           },
           "qlc_ssds": {
-            "15TB": 1225,
-            "30TB": 2450,
+            "15TB": 1555,
+            "30TB": 3108,
             "count": 22
           },
           "description": "D Box: Capacity node with SCM + QLC SSDs"
         },
         "min_c_boxes": 4,
         "min_d_boxes": 4,
-        "software_support_multiplier": 1.22,
-        "software_support_description": "Software and support is 55% of total cost (hardware is 45%)"
+        "software_support_multiplier": 1.5,
+        "software_support_description": "Software and support is 60% of total cost (hardware is 40%)"
       }
     },
     "Q2_2026": {
@@ -154,10 +154,10 @@
         },
         "dram_price_per_gb": 17.31,
         "ssds": {
-          "2TB": 1153,
-          "8TB": 4167,
-          "15TB": 6250,
-          "30TB": 11875
+          "2TB": 1463,
+          "8TB": 5289,
+          "15TB": 7931,
+          "30TB": 15070
         },
         "jbod_4u108": {
           "cost": 89383,
@@ -179,11 +179,11 @@
         "nic_cost": 1900,
         "dram_gb": 768,
         "dram_price_per_gb": 17.31,
-        "performance_per_server_gbs": 40,
+        "performance_per_server_gbs": 90,
         "ssds": {
-          "8TB": 4167,
-          "15TB": 6250,
-          "30TB": 11875
+          "8TB": 5289,
+          "15TB": 7931,
+          "30TB": 15070
         },
         "min_servers": 8,
         "ssds_per_server": 14,
@@ -198,12 +198,12 @@
         "dram_price_per_gb": 17.31,
         "performance_per_server_gbs": 20,
         "boot_ssds": {
-          "8TB": 4167,
+          "8TB": 5289,
           "count": 2
         },
         "data_ssds": {
-          "30TB": 11875,
-          "61TB": 24146,
+          "30TB": 15070,
+          "61TB": 30650,
           "count": 18
         },
         "min_servers": 8,
@@ -221,14 +221,14 @@
           "cost": 5700
         },
         "qlc_ssds": {
-          "30TB": 9500,
-          "60TB": 19000,
-          "122TB": 38708,
+          "30TB": 12056,
+          "60TB": 24111,
+          "122TB": 49120,
           "count": 9
         },
         "min_nodes": 11,
-        "software_support_multiplier": 1.22,
-        "software_support_description": "Software and support is 55% of total cost (hardware is 45%)"
+        "software_support_multiplier": 1.5,
+        "software_support_description": "Software and support is 60% of total cost (hardware is 40%)"
       },
       "comp_v_cbox_dbox": {
         "c_box": {
@@ -244,16 +244,16 @@
             "cost_per_drive": 700
           },
           "qlc_ssds": {
-            "15TB": 4750,
-            "30TB": 9500,
+            "15TB": 6028,
+            "30TB": 12056,
             "count": 22
           },
           "description": "D Box: Capacity node with SCM + QLC SSDs"
         },
         "min_c_boxes": 4,
         "min_d_boxes": 4,
-        "software_support_multiplier": 1.22,
-        "software_support_description": "Software and support is 55% of total cost (hardware is 45%)"
+        "software_support_multiplier": 1.5,
+        "software_support_description": "Software and support is 60% of total cost (hardware is 40%)"
       }
     }
   },
