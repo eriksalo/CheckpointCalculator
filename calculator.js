@@ -182,10 +182,33 @@ function calculate() {
     const VELO_SSD_SIZE = 2; // TB
     const COMPETITOR_NODE_READ_PERFORMANCE = 40; // GB/s per node (Nitro read)
     const COMPETITOR_SSD_COUNT = 14; // SSDs per node
-    const JBOD_BANDWIDTH = 21.5; // GB/s per JBOD
     const JBOD_CAPACITY_TB = 3240; // 108x 30TB HDDs
     const MIN_VPODS = 3;
     const MIN_COMPETITOR_NODES = 8;
+
+    // HDD layer write bandwidth based on number of VPODs
+    function getHDDBandwidth(vpodCount) {
+        const bandwidthTable = {
+            3: 39,
+            4: 74,
+            5: 98,
+            6: 123,
+            7: 147,
+            8: 172,
+            9: 196,
+            10: 218
+        };
+
+        if (vpodCount <= 10 && bandwidthTable[vpodCount]) {
+            return bandwidthTable[vpodCount];
+        } else if (vpodCount > 10) {
+            // Extrapolate linearly: 24 GB/s per additional node beyond 10
+            return 218 + (vpodCount - 10) * 24;
+        } else {
+            // For vpodCount < 3, use minimum
+            return 39;
+        }
+    }
 
     // Competitor write performance (varies by type)
     let competitorNodeWritePerformance;
@@ -250,6 +273,9 @@ function calculate() {
     const actualVduraSSDCapacity = veloSSDCapacity + vpodSSDCapacity;
     const actualVduraHDDCapacity = numJBODs * JBOD_CAPACITY_TB;
 
+    // Calculate HDD bandwidth based on VPOD count
+    const hddWriteBandwidth = numJBODs > 0 ? getHDDBandwidth(totalVPODs) : 0;
+
     const vdura = {
         velos: totalVELOs,
         vpods: totalVPODs,
@@ -257,9 +283,9 @@ function calculate() {
         ssdBandwidth: totalVPODs * VPOD_WRITE_PERFORMANCE,
         ssdCapacity: actualVduraSSDCapacity,
         jbods: numJBODs,
-        hddBandwidth: numJBODs * JBOD_BANDWIDTH,
+        hddBandwidth: hddWriteBandwidth,
         hddCapacity: actualVduraHDDCapacity,
-        migrationBandwidth: numJBODs * JBOD_BANDWIDTH
+        migrationBandwidth: hddWriteBandwidth
     };
 
     // Calculate Competitor configuration based on type
@@ -821,7 +847,8 @@ function calculateVDURACost(vdura, pricing) {
 
 // Update migration arrows
 function updateMigrationArrows(numJBODs, vduraBandwidth, competitorBandwidth) {
-    const JBOD_BANDWIDTH = 21.5; // GB/s per JBOD
+    // Calculate per-JBOD bandwidth from total bandwidth
+    const perJBODBandwidth = numJBODs > 0 ? vduraBandwidth / numJBODs : 0;
 
     // VDURA: Create one arrow per JBOD (or show message if 100% SSD)
     const vduraContainer = document.getElementById('vdura-migration-container');
@@ -849,7 +876,7 @@ function updateMigrationArrows(numJBODs, vduraBandwidth, competitorBandwidth) {
                         </defs>
                         <path d="M 20 10 L 20 66" stroke="#e79f23" stroke-width="3" fill="none" marker-end="url(#arrowhead-vdura-${i})" />
                     </svg>
-                    <div class="arrow-label-vertical">JBOD ${i + 1}<br><span class="bandwidth-highlight">${Math.round(JBOD_BANDWIDTH)} GB/s</span></div>
+                    <div class="arrow-label-vertical">JBOD ${i + 1}<br><span class="bandwidth-highlight">${Math.round(perJBODBandwidth)} GB/s</span></div>
                 </div>
             `;
         }
